@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/nnutter/go-constable/internal/analysis/nonmutating"
+	"github.com/nnutter/constable/internal/analysis/nonmutating"
 	"golang.org/x/tools/go/analysis/singlechecker"
 )
 
