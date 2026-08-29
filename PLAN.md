@@ -307,7 +307,7 @@ These questions should be resolved incrementally as implementation begins:
 7. Should mutation through `unsafe`, reflection, cgo, or assembly be reported as unsupported in annotated functions?
 8. Should appending to a slice parameter be considered mutation only when it writes to the existing backing array, or always treated as caller-visible?
 9. Should the analyzer permit mutations to data reachable from parameters if the function can prove the data was freshly allocated inside the function?
-10. The project name and module path are `constable` and `github.com/nnutter/go-constable`.
+10. The project name and module path are `constable` and `github.com/nnutter/constable`.
 
 ## First Implementation Milestone
 

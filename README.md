@@ -10,7 +10,7 @@ An annotated function must not mutate caller-visible state through parameters or
 Standard `go install` installation,
 
 ```sh
-go install github.com/nnutter/go-constable/cmd/constable@latest
+go install github.com/nnutter/constable/cmd/constable@latest
 ```
 
 ## Usage

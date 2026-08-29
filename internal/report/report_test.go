@@ -3,7 +3,7 @@ package report_test
 import (
 	"testing"
 
-	"github.com/nnutter/go-constable/internal/report"
+	"github.com/nnutter/constable/internal/report"
 	"github.com/stretchr/testify/assert"
 )
 

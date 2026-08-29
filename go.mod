@@ -1,4 +1,4 @@
-module github.com/nnutter/go-constable
+module github.com/nnutter/constable
 
 go 1.27.0
 

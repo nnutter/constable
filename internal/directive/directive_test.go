@@ -3,7 +3,7 @@ package directive_test
 import (
 	"testing"
 
-	"github.com/nnutter/go-constable/internal/directive"
+	"github.com/nnutter/constable/internal/directive"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

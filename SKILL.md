@@ -1,5 +1,5 @@
 ---
-name: go-constable
+name: constable
 description: Use constable to check that annotated Go functions and methods do not mutate caller-visible argument or receiver state.
 ---
 
@@ -15,7 +15,7 @@ The check does not guarantee that the function is pure or free of all side effec
 Install the released command with:
 
 ```sh
-go install github.com/nnutter/go-constable/cmd/constable@latest
+go install github.com/nnutter/constable/cmd/constable@latest
 ```
 
 Run it against the packages in a module:
