@@ -25,3 +25,7 @@ func MethodShouldBeInSameFile(typeName, methodName string) string {
 func MethodShouldBeSorted(typeName, methodName, otherMethod string) string {
 	return fmt.Sprintf("method %s of type %s should be sorted before method %s", methodName, typeName, otherMethod)
 }
+
+func UseTestifyInstead(testingMethod, testifyPackage string) string {
+	return fmt.Sprintf("use testify/%s instead of testing.%s", testifyPackage, testingMethod)
+}

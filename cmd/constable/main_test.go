@@ -106,6 +106,31 @@ func TestCLIMethodicalFail(t *testing.T) {
 	assert.Contains(t, output, "method A of type T should be sorted before method B")
 }
 
+func TestCLITestifyFail(t *testing.T) {
+	binary := buildBinary(t)
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/testify",
+			"",
+			"go 1.26",
+		},
+		GoFile: []string{
+			"package testify",
+			"",
+			"import \"testing\"",
+			"",
+			"func F(t *testing.T) {",
+			"\tt.Fatal(\"boom\")",
+			"}",
+		},
+	})
+
+	output, err := runConstable(t, binary, moduleDir)
+
+	assert.Error(t, err)
+	assert.Contains(t, output, "use testify/require instead of testing.Fatal")
+}
+
 func TestCLINonmutating(t *testing.T) {
 	binary := buildBinary(t)
 	moduleDir := writeModule(t, module{
