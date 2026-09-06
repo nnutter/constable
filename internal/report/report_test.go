@@ -3,8 +3,9 @@ package report_test
 import (
 	"testing"
 
-	"github.com/nnutter/constable/internal/report"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nnutter/constable/internal/report"
 )
 
 func TestMessages(t *testing.T) {

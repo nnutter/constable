@@ -3,8 +3,9 @@ package nonmutating_test
 import (
 	"testing"
 
-	"github.com/nnutter/constable/internal/analysis/nonmutating"
 	"golang.org/x/tools/go/analysis/analysistest"
+
+	"github.com/nnutter/constable/internal/analysis/nonmutating"
 )
 
 func TestAnalyzer(t *testing.T) {

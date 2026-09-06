@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nnutter/constable/internal/driver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nnutter/constable/internal/driver"
 )
 
 func TestRelativePosition(t *testing.T) {

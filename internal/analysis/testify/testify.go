@@ -3,8 +3,9 @@ package testify
 import (
 	"go/ast"
 
-	"github.com/nnutter/constable/internal/report"
 	"golang.org/x/tools/go/analysis"
+
+	"github.com/nnutter/constable/internal/report"
 )
 
 var Analyzer = &analysis.Analyzer{
