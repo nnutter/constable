@@ -81,6 +81,31 @@ func TestCLINonmutatingFail(t *testing.T) {
 	assert.Contains(t, output, "//constable:nonmutating function mutates pointer parameter p")
 }
 
+func TestCLIMethodicalFail(t *testing.T) {
+	binary := buildBinary(t)
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/methodical",
+			"",
+			"go 1.26",
+		},
+		GoFile: []string{
+			"package methodical",
+			"",
+			"type T struct{}",
+			"",
+			"func (t T) B() {}",
+			"",
+			"func (t T) A() {}",
+		},
+	})
+
+	output, err := runConstable(t, binary, moduleDir)
+
+	assert.Error(t, err)
+	assert.Contains(t, output, "method A of type T should be sorted before method B")
+}
+
 func TestCLINonmutating(t *testing.T) {
 	binary := buildBinary(t)
 	moduleDir := writeModule(t, module{
