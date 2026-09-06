@@ -17,3 +17,11 @@ func MutatesParameter(name string) string {
 func DeletesFromMapParameter(name string) string {
 	return fmt.Sprintf("//constable:nonmutating function deletes from map parameter %s", name)
 }
+
+func MethodShouldBeInSameFile(typeName, methodName string) string {
+	return fmt.Sprintf("method %s of type %s should be in same file as type definition", methodName, typeName)
+}
+
+func MethodShouldBeSorted(typeName, methodName, otherMethod string) string {
+	return fmt.Sprintf("method %s of type %s should be sorted before method %s", methodName, typeName, otherMethod)
+}

@@ -136,80 +136,19 @@ func (state *functionState) collectAssignAliases(stmt *ast.AssignStmt) bool {
 	return changed
 }
 
-func (state *functionState) reportMutations(body *ast.BlockStmt) {
-	ast.Inspect(body, func(node ast.Node) bool {
-		switch node := node.(type) {
-		case *ast.AssignStmt:
-			for _, lhs := range node.Lhs {
-				state.reportMutation(lhs, false)
-			}
-		case *ast.IncDecStmt:
-			state.reportMutation(node.X, false)
-		case *ast.CallExpr:
-			state.reportDelete(node)
-		}
-
-		return true
-	})
-}
-
-func (state *functionState) reportMutation(expr ast.Expr, isDelete bool) {
-	origin, ok := state.visibleMutationOrigin(expr)
-	if !ok {
-		return
-	}
-
-	state.pass.Report(analysis.Diagnostic{
-		Pos:     expr.Pos(),
-		Message: state.message(origin, isDelete),
-	})
-}
-
-func (state *functionState) reportDelete(call *ast.CallExpr) {
-	ident, ok := call.Fun.(*ast.Ident)
-	if !ok || ident.Name != "delete" || len(call.Args) == 0 {
-		return
-	}
-
-	origin, ok := state.exprRefersToCallerVisibleMemory(call.Args[0])
-	if !ok {
-		return
-	}
-
-	state.pass.Report(analysis.Diagnostic{
-		Pos:     call.Pos(),
-		Message: state.message(origin, true),
-	})
-}
-
-func (state *functionState) message(origin origin, isDelete bool) string {
-	if isDelete {
-		return report.DeletesFromMapParameter(origin.name)
-	}
-	if origin.isReceiver {
-		return report.MutatesReceiver(origin.name)
-	}
-	if _, ok := dereference(origin.typ).(*types.Pointer); ok {
-		return report.MutatesPointerParameter(origin.name)
-	}
-
-	return report.MutatesParameter(origin.name)
-}
-
-func (state *functionState) visibleMutationOrigin(expr ast.Expr) (origin, bool) {
+func (state *functionState) containerStorageVisible(expr ast.Expr) (origin, bool) {
 	expr = unparen(expr)
 	switch expr := expr.(type) {
 	case *ast.Ident:
-		return origin{}, false
-	case *ast.StarExpr:
-		return state.exprRefersToCallerVisibleMemory(expr.X)
-	case *ast.SelectorExpr:
-		return state.containerStorageVisible(expr.X)
-	case *ast.IndexExpr:
-		return state.exprRefersToCallerVisibleMemory(expr.X)
-	}
+		origin, ok := state.originOf(expr)
+		if !ok {
+			return origin, false
+		}
 
-	return origin{}, false
+		return origin, isReferenceLike(state.typeOf(expr))
+	default:
+		panic("unexpected expr type: " + fmt.Sprintf("%T", expr))
+	}
 }
 
 func (state *functionState) exprRefersToCallerVisibleMemory(expr ast.Expr) (origin, bool) {
@@ -247,19 +186,26 @@ func (state *functionState) exprRefersToCallerVisibleMemory(expr ast.Expr) (orig
 	return origin{}, false
 }
 
-func (state *functionState) containerStorageVisible(expr ast.Expr) (origin, bool) {
-	expr = unparen(expr)
-	switch expr := expr.(type) {
-	case *ast.Ident:
-		origin, ok := state.originOf(expr)
-		if !ok {
-			return origin, false
-		}
-
-		return origin, isReferenceLike(state.typeOf(expr))
-	default:
-		panic("unexpected expr type: " + fmt.Sprintf("%T", expr))
+func (state *functionState) message(origin origin, isDelete bool) string {
+	if isDelete {
+		return report.DeletesFromMapParameter(origin.name)
 	}
+	if origin.isReceiver {
+		return report.MutatesReceiver(origin.name)
+	}
+	if _, ok := dereference(origin.typ).(*types.Pointer); ok {
+		return report.MutatesPointerParameter(origin.name)
+	}
+
+	return report.MutatesParameter(origin.name)
+}
+
+func (state *functionState) objectOf(ident *ast.Ident) types.Object {
+	if obj := state.pass.TypesInfo.Defs[ident]; obj != nil {
+		return obj
+	}
+
+	return state.pass.TypesInfo.Uses[ident]
 }
 
 func (state *functionState) originOf(expr ast.Expr) (origin, bool) {
@@ -274,16 +220,70 @@ func (state *functionState) originOf(expr ast.Expr) (origin, bool) {
 	return origin{}, false
 }
 
-func (state *functionState) objectOf(ident *ast.Ident) types.Object {
-	if obj := state.pass.TypesInfo.Defs[ident]; obj != nil {
-		return obj
+func (state *functionState) reportDelete(call *ast.CallExpr) {
+	ident, ok := call.Fun.(*ast.Ident)
+	if !ok || ident.Name != "delete" || len(call.Args) == 0 {
+		return
 	}
 
-	return state.pass.TypesInfo.Uses[ident]
+	origin, ok := state.exprRefersToCallerVisibleMemory(call.Args[0])
+	if !ok {
+		return
+	}
+
+	state.pass.Report(analysis.Diagnostic{
+		Pos:     call.Pos(),
+		Message: state.message(origin, true),
+	})
+}
+
+func (state *functionState) reportMutation(expr ast.Expr, isDelete bool) {
+	origin, ok := state.visibleMutationOrigin(expr)
+	if !ok {
+		return
+	}
+
+	state.pass.Report(analysis.Diagnostic{
+		Pos:     expr.Pos(),
+		Message: state.message(origin, isDelete),
+	})
+}
+
+func (state *functionState) reportMutations(body *ast.BlockStmt) {
+	ast.Inspect(body, func(node ast.Node) bool {
+		switch node := node.(type) {
+		case *ast.AssignStmt:
+			for _, lhs := range node.Lhs {
+				state.reportMutation(lhs, false)
+			}
+		case *ast.IncDecStmt:
+			state.reportMutation(node.X, false)
+		case *ast.CallExpr:
+			state.reportDelete(node)
+		}
+
+		return true
+	})
 }
 
 func (state *functionState) typeOf(expr ast.Expr) types.Type {
 	return state.pass.TypesInfo.TypeOf(expr)
+}
+
+func (state *functionState) visibleMutationOrigin(expr ast.Expr) (origin, bool) {
+	expr = unparen(expr)
+	switch expr := expr.(type) {
+	case *ast.Ident:
+		return origin{}, false
+	case *ast.StarExpr:
+		return state.exprRefersToCallerVisibleMemory(expr.X)
+	case *ast.SelectorExpr:
+		return state.containerStorageVisible(expr.X)
+	case *ast.IndexExpr:
+		return state.exprRefersToCallerVisibleMemory(expr.X)
+	}
+
+	return origin{}, false
 }
 
 func isReferenceLike(typ types.Type) bool {

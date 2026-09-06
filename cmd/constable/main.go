@@ -1,10 +1,11 @@
 package main
 
 import (
+	"github.com/nnutter/constable/internal/analysis/methodical"
 	"github.com/nnutter/constable/internal/analysis/nonmutating"
-	"golang.org/x/tools/go/analysis/singlechecker"
+	"golang.org/x/tools/go/analysis/multichecker"
 )
 
 func main() {
-	singlechecker.Main(nonmutating.Analyzer)
+	multichecker.Main(nonmutating.Analyzer, methodical.Analyzer)
 }
