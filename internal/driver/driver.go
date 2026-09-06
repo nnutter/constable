@@ -147,7 +147,7 @@ func filterAnalyzers(analyzers []*analysis.Analyzer, enabled map[*analysis.Analy
 	if hasTrue {
 		var keep []*analysis.Analyzer
 		for _, a := range analyzers {
-			if *enabled[a] == setTrue {
+			if enabled != nil && enabled[a] != nil && *enabled[a] == setTrue {
 				keep = append(keep, a)
 			}
 		}
@@ -156,7 +156,7 @@ func filterAnalyzers(analyzers []*analysis.Analyzer, enabled map[*analysis.Analy
 	if hasFalse {
 		var keep []*analysis.Analyzer
 		for _, a := range analyzers {
-			if *enabled[a] != setFalse {
+			if enabled != nil && enabled[a] != nil && *enabled[a] != setFalse {
 				keep = append(keep, a)
 			}
 		}
