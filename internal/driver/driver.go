@@ -36,16 +36,7 @@ const (
 	setFalse
 )
 
-func (t *triState) String() string {
-	switch *t {
-	case setTrue:
-		return "true"
-	case setFalse:
-		return "false"
-	default:
-		return ""
-	}
-}
+func (t *triState) IsBoolFlag() bool { return true }
 
 func (t *triState) Set(s string) error {
 	switch s {
@@ -59,7 +50,16 @@ func (t *triState) Set(s string) error {
 	return nil
 }
 
-func (t *triState) IsBoolFlag() bool { return true }
+func (t *triState) String() string {
+	switch *t {
+	case setTrue:
+		return "true"
+	case setFalse:
+		return "false"
+	default:
+		return ""
+	}
+}
 
 // Main is the main function for the constable command.
 func Main(analyzers ...*analysis.Analyzer) {

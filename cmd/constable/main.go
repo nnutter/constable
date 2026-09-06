@@ -4,9 +4,9 @@ import (
 	"github.com/nnutter/constable/internal/analysis/methodical"
 	"github.com/nnutter/constable/internal/analysis/nonmutating"
 	"github.com/nnutter/constable/internal/analysis/testify"
-	"golang.org/x/tools/go/analysis/multichecker"
+	"github.com/nnutter/constable/internal/driver"
 )
 
 func main() {
-	multichecker.Main(nonmutating.Analyzer, methodical.Analyzer, testify.Analyzer)
+	driver.Main(nonmutating.Analyzer, methodical.Analyzer, testify.Analyzer)
 }

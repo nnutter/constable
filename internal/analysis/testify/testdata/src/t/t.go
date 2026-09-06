@@ -32,7 +32,7 @@ func UsesBenchmarkError(b *testing.B) {
 }
 
 func UsesInterface(tb testing.TB) {
-	tb.Error("boom") // want "use testify/assert instead of testing.Error"
+	tb.Error("boom")  // want "use testify/assert instead of testing.Error"
 	tb.Fatalf("boom") // want "use testify/require instead of testing.Fatalf"
 }
 
