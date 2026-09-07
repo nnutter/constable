@@ -184,7 +184,7 @@ func writeFlagsJSON() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Fprintf(os.Stdout, "%s", data)
+	_, _ = fmt.Fprintf(os.Stdout, "%s", data)
 }
 
 func writeVersion(progname string) {
@@ -192,24 +192,24 @@ func writeVersion(progname string) {
 	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
 		version = info.Main.Version
 	}
-	fmt.Fprintf(os.Stdout, "%s %s\n", progname, version)
+	_, _ = fmt.Fprintf(os.Stdout, "%s %s\n", progname, version)
 }
 
 func writeHelp(progname string, analyzers []*analysis.Analyzer, args []string) {
 	if len(args) == 0 {
-		fmt.Fprintf(os.Stdout, "%s is a tool for static analysis of Go programs.\n\nAnalyzers:\n\n", progname)
+		_, _ = fmt.Fprintf(os.Stdout, "%s is a tool for static analysis of Go programs.\n\nAnalyzers:\n\n", progname)
 		for _, a := range analyzers {
 			paras := strings.Split(a.Doc, "\n\n")
-			fmt.Fprintf(os.Stdout, "%s: %s\n\n", a.Name, paras[0])
+			_, _ = fmt.Fprintf(os.Stdout, "%s: %s\n\n", a.Name, paras[0])
 		}
-		fmt.Fprintf(os.Stdout, "Run '%s help name' for details and flags of a specific analyzer.\n", progname)
+		_, _ = fmt.Fprintf(os.Stdout, "Run '%s help name' for details and flags of a specific analyzer.\n", progname)
 		return
 	}
 	for _, a := range analyzers {
 		if a.Name == args[0] {
-			fmt.Fprintf(os.Stdout, "%s: %s\n", a.Name, a.Doc)
+			_, _ = fmt.Fprintf(os.Stdout, "%s: %s\n", a.Name, a.Doc)
 			a.Flags.VisitAll(func(f *flag.Flag) {
-				fmt.Fprintf(os.Stdout, "-%s.%s: %s\n", a.Name, f.Name, f.Usage)
+				_, _ = fmt.Fprintf(os.Stdout, "-%s.%s: %s\n", a.Name, f.Name, f.Usage)
 			})
 			return
 		}
@@ -347,7 +347,7 @@ func printText(w *os.File, graph *checker.Graph, cwd string, contextLines int) e
 
 	for act := range graph.All() {
 		if act.Err != nil {
-			fmt.Fprintf(w, "%s: %v\n", act.Analyzer.Name, act.Err)
+			_, _ = fmt.Fprintf(w, "%s: %v\n", act.Analyzer.Name, act.Err)
 		} else if act.IsRoot {
 			for _, diag := range act.Diagnostics {
 				posn := act.Package.Fset.Position(diag.Pos)
@@ -370,7 +370,7 @@ func printDiagnostic(w *os.File, fset *token.FileSet, cwd string, contextLines i
 		abs := fset.Position(pos)
 		rel := abs
 		rel.Filename = relativePath(cwd, abs.Filename)
-		fmt.Fprintf(w, "%s: %s\n", rel, message)
+		_, _ = fmt.Fprintf(w, "%s: %s\n", rel, message)
 
 		if contextLines >= 0 {
 			endPosition := fset.Position(end)
@@ -381,7 +381,7 @@ func printDiagnostic(w *os.File, fset *token.FileSet, cwd string, contextLines i
 			lines := strings.Split(string(data), "\n")
 			for i := abs.Line - contextLines; i <= endPosition.Line+contextLines; i++ {
 				if 1 <= i && i <= len(lines) {
-					fmt.Fprintf(w, "%d\t%s\n", i, lines[i-1])
+					_, _ = fmt.Fprintf(w, "%d\t%s\n", i, lines[i-1])
 				}
 			}
 		}
