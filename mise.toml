@@ -116,7 +116,7 @@ mise run lint-testifylint
 
 [tasks.lint-constable]
 description = "Checks nonmutating directives"
-run = "go tool constable ./..."
+run = "go run ./cmd/constable ./..."
 
 [tasks.lint-errcheck]
 description = "Check for unhandled errors"
