@@ -3,9 +3,10 @@ package main
 import (
 	"github.com/nnutter/constable/internal/analysis/methodical"
 	"github.com/nnutter/constable/internal/analysis/nonmutating"
-	"golang.org/x/tools/go/analysis/multichecker"
+	"github.com/nnutter/constable/internal/analysis/testify"
+	"github.com/nnutter/constable/internal/driver"
 )
 
 func main() {
-	multichecker.Main(nonmutating.Analyzer, methodical.Analyzer)
+	driver.Main(nonmutating.Analyzer, methodical.Analyzer, testify.Analyzer)
 }

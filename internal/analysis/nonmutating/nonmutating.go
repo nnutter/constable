@@ -5,11 +5,12 @@ import (
 	"go/ast"
 	"go/types"
 
+	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/analysis/passes/buildssa"
+
 	"github.com/nnutter/constable/internal/directive"
 	"github.com/nnutter/constable/internal/directive/enum"
 	"github.com/nnutter/constable/internal/report"
-	"golang.org/x/tools/go/analysis"
-	"golang.org/x/tools/go/analysis/passes/buildssa"
 )
 
 var Analyzer = &analysis.Analyzer{

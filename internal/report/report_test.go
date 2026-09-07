@@ -3,8 +3,9 @@ package report_test
 import (
 	"testing"
 
-	"github.com/nnutter/constable/internal/report"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nnutter/constable/internal/report"
 )
 
 func TestMessages(t *testing.T) {
@@ -14,4 +15,6 @@ func TestMessages(t *testing.T) {
 	assert.Equal(t, "//constable:nonmutating function deletes from map parameter m", report.DeletesFromMapParameter("m"))
 	assert.Equal(t, "method B of type Split should be in same file as type definition", report.MethodShouldBeInSameFile("Split", "B"))
 	assert.Equal(t, "method A of type Unsorted should be sorted before method B", report.MethodShouldBeSorted("Unsorted", "A", "B"))
+	assert.Equal(t, "use testify/assert instead of testing.Error", report.UseTestifyInstead("Error", "assert"))
+	assert.Equal(t, "use testify/require instead of testing.Fatal", report.UseTestifyInstead("Fatal", "require"))
 }

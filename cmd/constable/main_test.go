@@ -50,7 +50,8 @@ func TestCLIUsingAnalyzerTestData(t *testing.T) {
 
 	moduleDir := writeModule(t, m)
 	output, err := runConstable(t, binary, moduleDir)
-	assert.Error(t, err)
+	require.Error(t, err)
+	assert.NotContains(t, output, moduleDir)
 	for _, want := range wants {
 		assert.Contains(t, output, want)
 	}
@@ -76,9 +77,12 @@ func TestCLINonmutatingFail(t *testing.T) {
 
 	output, err := runConstable(t, binary, moduleDir)
 
-	assert.Error(t, err)
-	assert.Contains(t, output, "a.go:5:2")
+	require.Error(t, err)
 	assert.Contains(t, output, "//constable:nonmutating function mutates pointer parameter p")
+	assert.NotContains(t, output, moduleDir)
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	require.NotEmpty(t, lines)
+	assert.True(t, strings.HasPrefix(strings.TrimSpace(lines[0]), "a.go:5:2:"), "expected relative path, got: %s", lines[0])
 }
 
 func TestCLIMethodicalFail(t *testing.T) {
@@ -102,8 +106,53 @@ func TestCLIMethodicalFail(t *testing.T) {
 
 	output, err := runConstable(t, binary, moduleDir)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, output, "method A of type T should be sorted before method B")
+}
+
+func TestCLITestifyFail(t *testing.T) {
+	binary := buildBinary(t)
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/testify",
+			"",
+			"go 1.26",
+		},
+		GoFile: []string{
+			"package testify",
+			"",
+			"import \"testing\"",
+			"",
+			"func F(t *testing.T) {",
+			"\tt.Fatal(\"boom\")",
+			"}",
+		},
+	})
+
+	output, err := runConstable(t, binary, moduleDir)
+
+	require.Error(t, err)
+	assert.Contains(t, output, "use testify/require instead of testing.Fatal")
+	assert.NotContains(t, output, moduleDir)
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	require.NotEmpty(t, lines)
+	assert.True(t, strings.HasPrefix(strings.TrimSpace(lines[0]), "a.go:6:4:"), "expected relative path, got: %s", lines[0])
+}
+
+func TestCLIRelativeSubdirectory(t *testing.T) {
+	binary := buildBinary(t)
+	moduleDir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(moduleDir, "go.mod"), []byte("module example.com/subdir\n\ngo 1.26\n"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(moduleDir, "a.go"), []byte("package subdir\n"), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Join(moduleDir, "sub"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(moduleDir, "sub", "b.go"), []byte("package sub\n\nimport \"testing\"\n\nfunc F(t *testing.T) {\n\tt.Fatal(\"boom\")\n}\n"), 0o644))
+
+	output, err := runConstable(t, binary, moduleDir)
+
+	require.Error(t, err)
+	assert.Contains(t, output, "use testify/require instead of testing.Fatal")
+	assert.NotContains(t, output, moduleDir)
+	assert.Contains(t, output, "sub/b.go:6:4:")
 }
 
 func TestCLINonmutating(t *testing.T) {
