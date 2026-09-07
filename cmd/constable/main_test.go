@@ -50,7 +50,7 @@ func TestCLIUsingAnalyzerTestData(t *testing.T) {
 
 	moduleDir := writeModule(t, m)
 	output, err := runConstable(t, binary, moduleDir)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.NotContains(t, output, moduleDir)
 	for _, want := range wants {
 		assert.Contains(t, output, want)
@@ -77,7 +77,7 @@ func TestCLINonmutatingFail(t *testing.T) {
 
 	output, err := runConstable(t, binary, moduleDir)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, output, "//constable:nonmutating function mutates pointer parameter p")
 	assert.NotContains(t, output, moduleDir)
 	lines := strings.Split(strings.TrimSpace(output), "\n")
@@ -106,7 +106,7 @@ func TestCLIMethodicalFail(t *testing.T) {
 
 	output, err := runConstable(t, binary, moduleDir)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, output, "method A of type T should be sorted before method B")
 }
 
@@ -131,7 +131,7 @@ func TestCLITestifyFail(t *testing.T) {
 
 	output, err := runConstable(t, binary, moduleDir)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, output, "use testify/require instead of testing.Fatal")
 	assert.NotContains(t, output, moduleDir)
 	lines := strings.Split(strings.TrimSpace(output), "\n")
@@ -149,7 +149,7 @@ func TestCLIRelativeSubdirectory(t *testing.T) {
 
 	output, err := runConstable(t, binary, moduleDir)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, output, "use testify/require instead of testing.Fatal")
 	assert.NotContains(t, output, moduleDir)
 	assert.Contains(t, output, "sub/b.go:6:4:")
