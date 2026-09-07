@@ -182,6 +182,21 @@ func TestCLINonmutating(t *testing.T) {
 func buildBinary(t *testing.T) string {
 	t.Helper()
 
+	return buildBinaryWithLDFlags(t)
+}
+
+func TestCLIVersionInjected(t *testing.T) {
+	binary := buildBinaryWithLDFlags(t, "-X", "main.version=v9.9.9-test")
+
+	command := exec.Command(binary, "-V")
+	output, err := command.CombinedOutput()
+	require.NoError(t, err)
+	assert.Equal(t, strings.TrimSpace(filepath.Base(binary))+" v9.9.9-test", strings.TrimSpace(string(output)))
+}
+
+func buildBinaryWithLDFlags(t *testing.T, ldflags ...string) string {
+	t.Helper()
+
 	repoRoot, err := filepath.Abs(filepath.Join("..", ".."))
 	require.NoError(t, err)
 
@@ -193,7 +208,12 @@ func buildBinary(t *testing.T) string {
 	if runtime.GOOS == "windows" {
 		binary += ".exe"
 	}
-	command := exec.Command("go", "build", "-o", binary, "./cmd/constable")
+	args := []string{"build", "-o", binary}
+	if len(ldflags) > 0 {
+		args = append(args, "-ldflags", strings.Join(ldflags, " "))
+	}
+	args = append(args, "./cmd/constable")
+	command := exec.Command("go", args...)
 	command.Dir = repoRoot
 	output, err := command.CombinedOutput()
 	require.NoError(t, err, string(output))

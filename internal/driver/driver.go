@@ -62,7 +62,9 @@ func (t *triState) String() string {
 }
 
 // Main is the main function for the constable command.
-func Main(analyzers ...*analysis.Analyzer) {
+// version is the release version injected at build time via
+// -ldflags "-X main.version=..."; when empty, the embedded build info is used.
+func Main(version string, analyzers ...*analysis.Analyzer) {
 	progname := filepath.Base(os.Args[0])
 	log.SetFlags(0)
 	log.SetPrefix(progname + ": ")
@@ -105,7 +107,7 @@ func Main(analyzers ...*analysis.Analyzer) {
 	}
 
 	if *showVersion {
-		writeVersion(progname)
+		writeVersion(progname, version)
 		return
 	}
 
@@ -187,12 +189,22 @@ func writeFlagsJSON() {
 	_, _ = fmt.Fprintf(os.Stdout, "%s", data)
 }
 
-func writeVersion(progname string) {
-	version := "devel"
-	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
-		version = info.Main.Version
+func writeVersion(progname, version string) {
+	_, _ = fmt.Fprintf(os.Stdout, "%s %s\n", progname, resolveVersion(version))
+}
+
+// resolveVersion prefers the injected version and falls back to the
+// embedded build info. The "(devel)" placeholder means the binary was
+// built without module version or VCS info (e.g. from a tarball), so it
+// is treated as unset.
+func resolveVersion(version string) string {
+	if version != "" {
+		return version
 	}
-	_, _ = fmt.Fprintf(os.Stdout, "%s %s\n", progname, version)
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return "devel"
 }
 
 func writeHelp(progname string, analyzers []*analysis.Analyzer, args []string) {
