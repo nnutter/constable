@@ -179,6 +179,58 @@ func TestCLINonmutating(t *testing.T) {
 	assert.Empty(t, output)
 }
 
+func TestCLIComplexityFail(t *testing.T) {
+	binary := buildBinary(t)
+
+	repoRoot, err := filepath.Abs(filepath.Join("..", ".."))
+	require.NoError(t, err)
+
+	src := filepath.Join(repoRoot, "internal/analysis/complexity/testdata/src/d/d.go")
+	content, err := os.ReadFile(src)
+	require.NoError(t, err)
+
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/complexity",
+			"",
+			"go 1.26",
+		},
+		GoFile: strings.Split(strings.TrimSuffix(string(content), "\n"), "\n"),
+	})
+
+	output, err := runConstable(t, binary, moduleDir, "-complexity.limit=2")
+
+	require.Error(t, err)
+	assert.Contains(t, output, "cyclomatic complexity 3 exceeds limit 2 (function TwoBranches)")
+	assert.NotContains(t, output, moduleDir)
+}
+
+func TestCLIComplexityPass(t *testing.T) {
+	binary := buildBinary(t)
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/complexitypass",
+			"",
+			"go 1.26",
+		},
+		GoFile: []string{
+			"package complexitypass",
+			"",
+			"func F(x int) int {",
+			"\tif x > 0 {",
+			"\t\treturn 1",
+			"\t}",
+			"\treturn 0",
+			"}",
+		},
+	})
+
+	output, err := runConstable(t, binary, moduleDir)
+
+	require.NoError(t, err, output)
+	assert.Empty(t, output)
+}
+
 func buildBinary(t *testing.T) string {
 	t.Helper()
 
@@ -234,10 +286,11 @@ func writeModule(t *testing.T, m module) string {
 	return moduleDir
 }
 
-func runConstable(t *testing.T, binary string, moduleDir string) (string, error) {
+func runConstable(t *testing.T, binary string, moduleDir string, extraArgs ...string) (string, error) {
 	t.Helper()
 
-	command := exec.Command(binary, "./...")
+	args := append(extraArgs, "./...")
+	command := exec.Command(binary, args...)
 	command.Dir = moduleDir
 	var output bytes.Buffer
 	command.Stdout = &output
