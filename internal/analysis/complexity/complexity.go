@@ -11,10 +11,16 @@ import (
 
 const defaultComplexityLimit = 10
 
+var limit = defaultComplexityLimit
+
 var Analyzer = &analysis.Analyzer{
 	Name: "complexity",
 	Doc:  "reports functions with cyclomatic complexity over the limit",
 	Run:  run,
+}
+
+func init() {
+	Analyzer.Flags.IntVar(&limit, "limit", defaultComplexityLimit, "maximum allowed cyclomatic complexity")
 }
 
 func run(pass *analysis.Pass) (any, error) {
@@ -26,10 +32,10 @@ func run(pass *analysis.Pass) (any, error) {
 			}
 
 			complexity := measure(funcDecl.Body)
-			if complexity > defaultComplexityLimit {
+			if complexity > limit {
 				pass.Report(analysis.Diagnostic{
 					Pos:     funcDecl.Name.Pos(),
-					Message: report.ComplexityExceedsLimit(funcDecl.Name.Name, complexity, defaultComplexityLimit),
+					Message: report.ComplexityExceedsLimit(funcDecl.Name.Name, complexity, limit),
 				})
 			}
 		}
