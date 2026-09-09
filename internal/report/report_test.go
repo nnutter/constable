@@ -17,4 +17,5 @@ func TestMessages(t *testing.T) {
 	assert.Equal(t, "method A of type Unsorted should be sorted before method B", report.MethodShouldBeSorted("Unsorted", "A", "B"))
 	assert.Equal(t, "use testify/assert instead of testing.Error", report.UseTestifyInstead("Error", "assert"))
 	assert.Equal(t, "use testify/require instead of testing.Fatal", report.UseTestifyInstead("Fatal", "require"))
+	assert.Equal(t, "cyclomatic complexity 12 exceeds limit 10 (function F)", report.ComplexityExceedsLimit("F", 12, 10))
 }
