@@ -111,6 +111,31 @@ func (c Count) Increment() Count {
 }
 ```
 
+## Predicates
+
+The predicates analyzer reports `&&` and `||` operands, except the
+first, that are not predicate-function calls. The first operand always
+executes, so coverage observes short-circuiting through the rest.
+
+```go
+func F(a, b bool) {
+ if a && b { // reported: use a && isB()
+ }
+}
+
+func isB() bool { return false }
+
+func G(a bool) {
+ if a && isB() { // allowed
+ }
+}
+```
+
+The check covers `if` and `for` conditions and bool assignments such
+as `c := a && b`, including `!a`, field and map access, and
+comparisons. Operands that are already calls, compound expressions,
+or `true`/`false`/`nil` are allowed.
+
 ## Agent workflow
 
 1. Identify functions and methods whose API contract should not mutate caller-owned data.

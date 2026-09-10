@@ -226,6 +226,61 @@ func TestCLIComplexityFail(t *testing.T) {
 	assert.NotContains(t, output, moduleDir)
 }
 
+func TestCLIPredicatesFail(t *testing.T) {
+	binary := buildBinary(t)
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/predicates",
+			"",
+			"go 1.26",
+		},
+		Files: map[string][]string{"a.go": {
+			"package predicates",
+			"",
+			"func F(a, b bool) {",
+			"\tif a && b {",
+			"\t\tprintln(\"both\")",
+			"\t}",
+			"}",
+		}},
+	})
+
+	output, err := runConstable(t, binary, moduleDir)
+
+	require.Error(t, err)
+	assert.Contains(t, output, `use predicate function instead of "b" in compound conditional`)
+	assert.NotContains(t, output, moduleDir)
+}
+
+func TestCLIPredicatesPass(t *testing.T) {
+	binary := buildBinary(t)
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/predicatespass",
+			"",
+			"go 1.26",
+		},
+		Files: map[string][]string{"a.go": {
+			"package predicates",
+			"",
+			"func isA() bool { return true }",
+			"",
+			"func isB() bool { return false }",
+			"",
+			"func F() {",
+			"\tif isA() && isB() {",
+			"\t\tprintln(\"both\")",
+			"\t}",
+			"}",
+		}},
+	})
+
+	output, err := runConstable(t, binary, moduleDir)
+
+	require.NoError(t, err, output)
+	assert.Empty(t, output)
+}
+
 func TestCLIComplexityPass(t *testing.T) {
 	binary := buildBinary(t)
 
