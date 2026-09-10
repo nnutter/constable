@@ -147,13 +147,7 @@ func filterAnalyzers(analyzers []*analysis.Analyzer, enabled map[*analysis.Analy
 	}
 
 	if hasTrue {
-		var keep []*analysis.Analyzer
-		for _, a := range analyzers {
-			if enabled != nil && enabled[a] != nil && *enabled[a] == setTrue {
-				keep = append(keep, a)
-			}
-		}
-		return keep
+		return keepEnabled(analyzers, enabled)
 	}
 	if hasFalse {
 		var keep []*analysis.Analyzer
@@ -165,6 +159,16 @@ func filterAnalyzers(analyzers []*analysis.Analyzer, enabled map[*analysis.Analy
 		return keep
 	}
 	return analyzers
+}
+
+func keepEnabled(analyzers []*analysis.Analyzer, enabled map[*analysis.Analyzer]*triState) []*analysis.Analyzer {
+	var keep []*analysis.Analyzer
+	for _, a := range analyzers {
+		if enabled != nil && enabled[a] != nil && *enabled[a] == setTrue {
+			keep = append(keep, a)
+		}
+	}
+	return keep
 }
 
 type jsonFlag struct {
@@ -277,6 +281,12 @@ func Run(args []string, analyzers []*analysis.Analyzer, opts Options) (exitcode 
 		return 1
 	}
 
+	exitAtLeast(exitCode(graph))
+
+	return exitcode
+}
+
+func exitCode(graph *checker.Graph) int {
 	var numErrors, rootDiags int
 	for act := range graph.All() {
 		if act.Err != nil {
@@ -287,12 +297,12 @@ func Run(args []string, analyzers []*analysis.Analyzer, opts Options) (exitcode 
 	}
 
 	if numErrors > 0 {
-		exitcode = 1
+		return 1
 	} else if rootDiags > 0 {
-		exitcode = 3
+		return 3
 	}
 
-	return exitcode
+	return 0
 }
 
 func needFacts(analyzers []*analysis.Analyzer) bool {
@@ -432,6 +442,38 @@ type jsonDiagnostic struct {
 	Related        []jsonRelated      `json:"related,omitempty"`
 }
 
+func encodeDiagnostic(diag analysis.Diagnostic, fset *token.FileSet, cwd string) jsonDiagnostic {
+	var fixes []jsonSuggestedFix
+	for _, fix := range diag.SuggestedFixes {
+		var edits []jsonTextEdit
+		for _, edit := range fix.TextEdits {
+			edits = append(edits, jsonTextEdit{
+				Filename: relativePath(cwd, fset.Position(edit.Pos).Filename),
+				Start:    fset.Position(edit.Pos).Offset,
+				End:      fset.Position(edit.End).Offset,
+				New:      string(edit.NewText),
+			})
+		}
+		fixes = append(fixes, jsonSuggestedFix{Message: fix.Message, Edits: edits})
+	}
+	var related []jsonRelated
+	for _, r := range diag.Related {
+		related = append(related, jsonRelated{
+			Posn:    RelativePosition(cwd, fset, r.Pos).String(),
+			End:     RelativePosition(cwd, fset, cmp.Or(r.End, r.Pos)).String(),
+			Message: r.Message,
+		})
+	}
+	return jsonDiagnostic{
+		Category:       diag.Category,
+		Posn:           RelativePosition(cwd, fset, diag.Pos).String(),
+		End:            RelativePosition(cwd, fset, cmp.Or(diag.End, diag.Pos)).String(),
+		Message:        diag.Message,
+		SuggestedFixes: fixes,
+		Related:        related,
+	}
+}
+
 func printJSON(w *os.File, graph *checker.Graph, cwd string) error {
 	tree := make(map[string]map[string]any)
 	for act := range graph.All() {
@@ -441,35 +483,7 @@ func printJSON(w *os.File, graph *checker.Graph, cwd string) error {
 		} else if act.IsRoot && len(act.Diagnostics) > 0 {
 			diagnostics := make([]jsonDiagnostic, 0, len(act.Diagnostics))
 			for _, diag := range act.Diagnostics {
-				var fixes []jsonSuggestedFix
-				for _, fix := range diag.SuggestedFixes {
-					var edits []jsonTextEdit
-					for _, edit := range fix.TextEdits {
-						edits = append(edits, jsonTextEdit{
-							Filename: relativePath(cwd, act.Package.Fset.Position(edit.Pos).Filename),
-							Start:    act.Package.Fset.Position(edit.Pos).Offset,
-							End:      act.Package.Fset.Position(edit.End).Offset,
-							New:      string(edit.NewText),
-						})
-					}
-					fixes = append(fixes, jsonSuggestedFix{Message: fix.Message, Edits: edits})
-				}
-				var related []jsonRelated
-				for _, r := range diag.Related {
-					related = append(related, jsonRelated{
-						Posn:    RelativePosition(cwd, act.Package.Fset, r.Pos).String(),
-						End:     RelativePosition(cwd, act.Package.Fset, cmp.Or(r.End, r.Pos)).String(),
-						Message: r.Message,
-					})
-				}
-				diagnostics = append(diagnostics, jsonDiagnostic{
-					Category:       diag.Category,
-					Posn:           RelativePosition(cwd, act.Package.Fset, diag.Pos).String(),
-					End:            RelativePosition(cwd, act.Package.Fset, cmp.Or(diag.End, diag.Pos)).String(),
-					Message:        diag.Message,
-					SuggestedFixes: fixes,
-					Related:        related,
-				})
+				diagnostics = append(diagnostics, encodeDiagnostic(diag, act.Package.Fset, cwd))
 			}
 			value = diagnostics
 		}

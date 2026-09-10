@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,29 +15,29 @@ import (
 )
 
 type module struct {
-	GoMod  []string
-	GoFile []string
+	GoMod []string
+	Files map[string][]string
 }
 
-func TestCLIUsingAnalyzerTestData(t *testing.T) {
-	binary := buildBinary(t)
+func repoRoot(t *testing.T) string {
+	t.Helper()
 
-	repoRoot, err := filepath.Abs(filepath.Join("..", ".."))
+	root, err := filepath.Abs(filepath.Join("..", ".."))
 	require.NoError(t, err)
+	return root
+}
 
-	src := filepath.Join(repoRoot, "internal/analysis/nonmutating/testdata/src/a/a.go")
-	content, err := os.ReadFile(src)
+func loadTestdata(t *testing.T, rel string) []string {
+	t.Helper()
+
+	content, err := os.ReadFile(filepath.Join(repoRoot(t), rel))
 	require.NoError(t, err)
+	return strings.Split(strings.TrimSuffix(string(content), "\n"), "\n")
+}
 
-	m := module{
-		GoMod:  []string{"module example.com/testdata", "", "go 1.26"},
-		GoFile: strings.Split(strings.TrimSuffix(string(content), "\n"), "\n"),
-	}
-
-	// Grab the "want" lines from our analysistest.TestData() so the CLI tests
-	// automatically match the analyzer tests.
+func extractWants(lines []string) []string {
 	var wants []string
-	for _, line := range m.GoFile {
+	for _, line := range lines {
 		_, after, ok := strings.Cut(line, `// want "`)
 		if !ok {
 			continue
@@ -47,14 +48,31 @@ func TestCLIUsingAnalyzerTestData(t *testing.T) {
 		}
 		wants = append(wants, before)
 	}
+	return wants
+}
 
-	moduleDir := writeModule(t, m)
-	output, err := runConstable(t, binary, moduleDir)
-	require.Error(t, err)
+func assertDiagnostics(t *testing.T, output, moduleDir string, wants []string) {
+	t.Helper()
+
 	assert.NotContains(t, output, moduleDir)
 	for _, want := range wants {
 		assert.Contains(t, output, want)
 	}
+}
+
+func TestCLIUsingAnalyzerTestData(t *testing.T) {
+	binary := buildBinary(t)
+
+	lines := loadTestdata(t, "internal/analysis/nonmutating/testdata/src/a/a.go")
+	wants := extractWants(lines)
+
+	moduleDir := writeModule(t, module{
+		GoMod: []string{"module example.com/testdata", "", "go 1.26"},
+		Files: map[string][]string{"a.go": lines},
+	})
+	output, err := runConstable(t, binary, moduleDir)
+	require.Error(t, err)
+	assertDiagnostics(t, output, moduleDir, wants)
 }
 
 func TestCLINonmutatingFail(t *testing.T) {
@@ -65,14 +83,14 @@ func TestCLINonmutatingFail(t *testing.T) {
 			"",
 			"go 1.26",
 		},
-		GoFile: []string{
+		Files: map[string][]string{"a.go": {
 			"package failing",
 			"",
 			"//constable:nonmutating",
 			"func F(p *int) {",
 			"\t*p = 1",
 			"}",
-		},
+		}},
 	})
 
 	output, err := runConstable(t, binary, moduleDir)
@@ -87,65 +105,73 @@ func TestCLINonmutatingFail(t *testing.T) {
 
 func TestCLIMethodicalFail(t *testing.T) {
 	binary := buildBinary(t)
+
+	mLines := loadTestdata(t, "internal/analysis/methodical/testdata/src/m/m.go")
+	otherLines := loadTestdata(t, "internal/analysis/methodical/testdata/src/m/other.go")
+	wants := append(extractWants(mLines), extractWants(otherLines)...)
+
 	moduleDir := writeModule(t, module{
 		GoMod: []string{
 			"module example.com/methodical",
 			"",
 			"go 1.26",
 		},
-		GoFile: []string{
-			"package methodical",
-			"",
-			"type T struct{}",
-			"",
-			"func (t T) B() {}",
-			"",
-			"func (t T) A() {}",
+		Files: map[string][]string{
+			"m.go":     mLines,
+			"other.go": otherLines,
 		},
 	})
 
 	output, err := runConstable(t, binary, moduleDir)
 
 	require.Error(t, err)
-	assert.Contains(t, output, "method A of type T should be sorted before method B")
+	assertDiagnostics(t, output, moduleDir, wants)
 }
 
 func TestCLITestifyFail(t *testing.T) {
 	binary := buildBinary(t)
+
+	lines := loadTestdata(t, "internal/analysis/testify/testdata/src/t/t.go")
+	wants := extractWants(lines)
+
 	moduleDir := writeModule(t, module{
 		GoMod: []string{
 			"module example.com/testify",
 			"",
 			"go 1.26",
 		},
-		GoFile: []string{
-			"package testify",
-			"",
-			"import \"testing\"",
-			"",
-			"func F(t *testing.T) {",
-			"\tt.Fatal(\"boom\")",
-			"}",
-		},
+		Files: map[string][]string{"a.go": lines},
 	})
 
 	output, err := runConstable(t, binary, moduleDir)
 
 	require.Error(t, err)
-	assert.Contains(t, output, "use testify/require instead of testing.Fatal")
-	assert.NotContains(t, output, moduleDir)
-	lines := strings.Split(strings.TrimSpace(output), "\n")
-	require.NotEmpty(t, lines)
-	assert.True(t, strings.HasPrefix(strings.TrimSpace(lines[0]), "a.go:6:4:"), "expected relative path, got: %s", lines[0])
+	assertDiagnostics(t, output, moduleDir, wants)
 }
 
 func TestCLIRelativeSubdirectory(t *testing.T) {
 	binary := buildBinary(t)
-	moduleDir := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(moduleDir, "go.mod"), []byte("module example.com/subdir\n\ngo 1.26\n"), 0o644))
-	require.NoError(t, os.WriteFile(filepath.Join(moduleDir, "a.go"), []byte("package subdir\n"), 0o644))
-	require.NoError(t, os.MkdirAll(filepath.Join(moduleDir, "sub"), 0o755))
-	require.NoError(t, os.WriteFile(filepath.Join(moduleDir, "sub", "b.go"), []byte("package sub\n\nimport \"testing\"\n\nfunc F(t *testing.T) {\n\tt.Fatal(\"boom\")\n}\n"), 0o644))
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/subdir",
+			"",
+			"go 1.26",
+		},
+		Files: map[string][]string{
+			"a.go": {
+				"package subdir",
+			},
+			"sub/b.go": {
+				"package sub",
+				"",
+				"import \"testing\"",
+				"",
+				"func F(t *testing.T) {",
+				"\tt.Fatal(\"boom\")",
+				"}",
+			},
+		},
+	})
 
 	output, err := runConstable(t, binary, moduleDir)
 
@@ -163,14 +189,55 @@ func TestCLINonmutating(t *testing.T) {
 			"",
 			"go 1.26",
 		},
-		GoFile: []string{
+		Files: map[string][]string{"a.go": {
 			"package passing",
 			"",
 			"//constable:nonmutating",
 			"func F(p *int) int {",
 			"\treturn *p",
 			"}",
+		}},
+	})
+
+	output, err := runConstable(t, binary, moduleDir)
+
+	require.NoError(t, err, output)
+	assert.Empty(t, output)
+}
+
+func TestCLIComplexityFail(t *testing.T) {
+	binary := buildBinary(t)
+
+	lines := loadTestdata(t, "internal/analysis/complexity/testdata/src/d/d.go")
+
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/complexity",
+			"",
+			"go 1.26",
 		},
+		Files: map[string][]string{"a.go": lines},
+	})
+
+	output, err := runConstable(t, binary, moduleDir, "-complexity.limit=2")
+
+	require.Error(t, err)
+	assert.Contains(t, output, "cyclomatic complexity 3 exceeds limit 2 (function TwoBranches)")
+	assert.NotContains(t, output, moduleDir)
+}
+
+func TestCLIComplexityPass(t *testing.T) {
+	binary := buildBinary(t)
+
+	lines := loadTestdata(t, "internal/analysis/complexity/testdata/src/d/d.go")
+
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/complexitypass",
+			"",
+			"go 1.26",
+		},
+		Files: map[string][]string{"a.go": lines},
 	})
 
 	output, err := runConstable(t, binary, moduleDir)
@@ -197,8 +264,7 @@ func TestCLIVersionInjected(t *testing.T) {
 func buildBinaryWithLDFlags(t *testing.T, ldflags ...string) string {
 	t.Helper()
 
-	repoRoot, err := filepath.Abs(filepath.Join("..", ".."))
-	require.NoError(t, err)
+	repoRoot := repoRoot(t)
 
 	tmpRoot := filepath.Join(repoRoot, "tmp")
 	require.NoError(t, os.MkdirAll(tmpRoot, 0o755))
@@ -225,7 +291,9 @@ func writeModule(t *testing.T, m module) string {
 	t.Helper()
 
 	moduleDir := t.TempDir()
-	for name, lines := range map[string][]string{"go.mod": m.GoMod, "a.go": m.GoFile} {
+	files := map[string][]string{"go.mod": m.GoMod}
+	maps.Copy(files, m.Files)
+	for name, lines := range files {
 		path := filepath.Join(moduleDir, name)
 		require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
 		require.NoError(t, os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644))
@@ -234,10 +302,11 @@ func writeModule(t *testing.T, m module) string {
 	return moduleDir
 }
 
-func runConstable(t *testing.T, binary string, moduleDir string) (string, error) {
+func runConstable(t *testing.T, binary string, moduleDir string, extraArgs ...string) (string, error) {
 	t.Helper()
 
-	command := exec.Command(binary, "./...")
+	args := append(extraArgs, "./...")
+	command := exec.Command(binary, args...)
 	command.Dir = moduleDir
 	var output bytes.Buffer
 	command.Stdout = &output

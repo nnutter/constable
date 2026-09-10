@@ -64,6 +64,20 @@ func (b Buffer) ClearFirstByte() {
 }
 ```
 
+## Complexity
+
+The complexity analyzer reports functions and methods whose cyclomatic
+complexity exceeds a limit. Complexity starts at 1 and adds 1 for each
+`if`, `for`, `range`, `case`, `select` clause, `&&`, and `||`. Closures
+fold into the enclosing function and default clauses count.
+
+```sh
+constable ./...
+constable -complexity.limit=15 ./...
+```
+
+The limit defaults to 10 and is configured with `-complexity.limit`.
+
 ## Development
 
 Run all fixers,

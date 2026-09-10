@@ -29,3 +29,7 @@ func MethodShouldBeSorted(typeName, methodName, otherMethod string) string {
 func UseTestifyInstead(testingMethod, testifyPackage string) string {
 	return fmt.Sprintf("use testify/%s instead of testing.%s", testifyPackage, testingMethod)
 }
+
+func ComplexityExceedsLimit(name string, complexity, limit int) string {
+	return fmt.Sprintf("cyclomatic complexity %d exceeds limit %d (function %s)", complexity, limit, name)
+}
