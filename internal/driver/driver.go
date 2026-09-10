@@ -364,6 +364,7 @@ func Run(args []string, analyzers []*analysis.Analyzer, opts Options) (exitcode 
 		return exitcode
 	}
 
+	// With -json, the exit code is always zero.
 	if opts.JSON {
 		if err := printJSON(os.Stdout, graph, cwd); err != nil {
 			return 1
