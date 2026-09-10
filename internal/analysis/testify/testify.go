@@ -2,11 +2,32 @@ package testify
 
 import (
 	"go/ast"
+	"go/types"
 
 	"golang.org/x/tools/go/analysis"
 
 	"github.com/nnutter/constable/internal/report"
 )
+
+func succeeded(ok bool) bool {
+	return ok
+}
+
+func isNilSelection(selection *types.Selection) bool {
+	return selection == nil
+}
+
+func isNilObject(obj types.Object) bool {
+	return obj == nil
+}
+
+func isNilPackage(pkg *types.Package) bool {
+	return pkg == nil
+}
+
+func isTestingPath(path string) bool {
+	return path == "testing"
+}
 
 var Analyzer = &analysis.Analyzer{
 	Name: "testify",
@@ -50,11 +71,11 @@ func checkCall(pass *analysis.Pass, call *ast.CallExpr) {
 	}
 
 	selection, ok := pass.TypesInfo.Selections[sel]
-	if !ok || selection == nil {
+	if !succeeded(ok) || isNilSelection(selection) {
 		return
 	}
 	obj := selection.Obj()
-	if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != "testing" {
+	if isNilObject(obj) || isNilPackage(obj.Pkg()) || !isTestingPath(obj.Pkg().Path()) {
 		return
 	}
 
