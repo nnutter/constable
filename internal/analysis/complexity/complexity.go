@@ -23,11 +23,27 @@ func init() {
 	Analyzer.Flags.IntVar(&limit, "limit", defaultComplexityLimit, "maximum allowed cyclomatic complexity")
 }
 
+func isFuncDecl(ok bool) bool {
+	return ok
+}
+
+func isNilBody(body *ast.BlockStmt) bool {
+	return body == nil
+}
+
+func isLogicalAnd(op token.Token) bool {
+	return op == token.LAND
+}
+
+func isLogicalOr(op token.Token) bool {
+	return op == token.LOR
+}
+
 func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
 		for _, decl := range file.Decls {
 			funcDecl, ok := decl.(*ast.FuncDecl)
-			if !ok || funcDecl.Body == nil {
+			if !isFuncDecl(ok) || isNilBody(funcDecl.Body) {
 				continue
 			}
 
@@ -59,7 +75,7 @@ func measure(body *ast.BlockStmt) int {
 			*ast.CommClause:
 			complexity++
 		case *ast.BinaryExpr:
-			if node.Op == token.LAND || node.Op == token.LOR {
+			if isLogicalAnd(node.Op) || isLogicalOr(node.Op) {
 				complexity++
 			}
 		}

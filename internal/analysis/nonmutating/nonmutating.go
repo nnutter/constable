@@ -33,11 +33,35 @@ type functionState struct {
 	origins map[types.Object]origin
 }
 
+func succeeded(ok bool) bool {
+	return ok
+}
+
+func isNilBody(body *ast.BlockStmt) bool {
+	return body == nil
+}
+
+func isChanged(changed bool) bool {
+	return changed
+}
+
+func isNilObject(obj types.Object) bool {
+	return obj == nil
+}
+
+func isDeleteName(name string) bool {
+	return name == "delete"
+}
+
+func hasNoArgs(call *ast.CallExpr) bool {
+	return len(call.Args) == 0
+}
+
 func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
 		for _, decl := range file.Decls {
 			funcDecl, ok := decl.(*ast.FuncDecl)
-			if !ok || !hasNonmutatingDirective(funcDecl) || funcDecl.Body == nil {
+			if !succeeded(ok) || !hasNonmutatingDirective(funcDecl) || isNilBody(funcDecl.Body) {
 				continue
 			}
 
@@ -102,7 +126,7 @@ func (state *functionState) collectAliases(body *ast.BlockStmt) {
 		ast.Inspect(body, func(node ast.Node) bool {
 			switch node := node.(type) {
 			case *ast.AssignStmt:
-				changed = state.collectAssignAliases(node) || changed
+				changed = state.collectAssignAliases(node) || isChanged(changed)
 			}
 
 			return true
@@ -124,7 +148,7 @@ func (state *functionState) collectAssignAliases(stmt *ast.AssignStmt) bool {
 
 		obj := state.objectOf(ident)
 		origin, ok := state.originOf(stmt.Rhs[i])
-		if obj == nil || !ok {
+		if isNilObject(obj) || !succeeded(ok) {
 			continue
 		}
 
@@ -223,7 +247,7 @@ func (state *functionState) originOf(expr ast.Expr) (origin, bool) {
 
 func (state *functionState) reportDelete(call *ast.CallExpr) {
 	ident, ok := call.Fun.(*ast.Ident)
-	if !ok || ident.Name != "delete" || len(call.Args) == 0 {
+	if !succeeded(ok) || !isDeleteName(ident.Name) || hasNoArgs(call) {
 		return
 	}
 

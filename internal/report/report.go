@@ -33,3 +33,7 @@ func UseTestifyInstead(testingMethod, testifyPackage string) string {
 func ComplexityExceedsLimit(name string, complexity, limit int) string {
 	return fmt.Sprintf("cyclomatic complexity %d exceeds limit %d (function %s)", complexity, limit, name)
 }
+
+func UsePredicateInstead(expr string) string {
+	return fmt.Sprintf("use predicate function instead of %q in compound conditional", expr)
+}

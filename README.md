@@ -78,6 +78,24 @@ constable -complexity.limit=15 ./...
 
 The limit defaults to 10 and is configured with `-complexity.limit`.
 
+## Predicates
+
+The predicates analyzer reports `&&` and `||` operands, except the
+first, that are not predicate-function calls. The first operand always
+executes, so coverage observes short-circuiting through the rest.
+
+```go
+if a && b { // reported: use a && isB()
+}
+
+if a && isB() { // allowed
+}
+```
+
+The check also covers `for` conditions and bool assignments such as
+`c := a && b`, including negated variables, field and map access,
+and comparisons.
+
 ## Development
 
 Run all fixers,

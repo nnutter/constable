@@ -4,6 +4,7 @@ import (
 	"github.com/nnutter/constable/internal/analysis/complexity"
 	"github.com/nnutter/constable/internal/analysis/methodical"
 	"github.com/nnutter/constable/internal/analysis/nonmutating"
+	"github.com/nnutter/constable/internal/analysis/predicates"
 	"github.com/nnutter/constable/internal/analysis/testify"
 	"github.com/nnutter/constable/internal/driver"
 )
@@ -14,5 +15,5 @@ import (
 var version string
 
 func main() {
-	driver.Main(version, nonmutating.Analyzer, methodical.Analyzer, testify.Analyzer, complexity.Analyzer)
+	driver.Main(version, nonmutating.Analyzer, methodical.Analyzer, predicates.Analyzer, testify.Analyzer, complexity.Analyzer)
 }

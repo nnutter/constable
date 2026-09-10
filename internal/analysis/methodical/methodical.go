@@ -30,6 +30,34 @@ func run(pass *analysis.Pass) (any, error) {
 	return nil, nil
 }
 
+func succeeded(ok bool) bool {
+	return ok
+}
+
+func isNilTypeName(t *types.TypeName) bool {
+	return t == nil
+}
+
+func isNilRecv(recv *ast.FieldList) bool {
+	return recv == nil
+}
+
+func isNonEmpty(s string) bool {
+	return s != ""
+}
+
+func isBefore(a, b string) bool {
+	return strings.Compare(a, b) < 0
+}
+
+func isNilFunc(f *types.Func) bool {
+	return f == nil
+}
+
+func isNilVar(v *types.Var) bool {
+	return v == nil
+}
+
 func collectTypeFiles(pass *analysis.Pass) map[types.Object]string {
 	typeFiles := make(map[types.Object]string)
 	for _, file := range pass.Files {
@@ -44,7 +72,7 @@ func collectTypeFiles(pass *analysis.Pass) map[types.Object]string {
 					continue
 				}
 				obj, ok := pass.TypesInfo.Defs[typeSpec.Name].(*types.TypeName)
-				if !ok || obj == nil {
+				if !succeeded(ok) || isNilTypeName(obj) {
 					continue
 				}
 				typeFiles[obj] = pass.Fset.Position(typeSpec.Pos()).Filename
@@ -74,7 +102,7 @@ func collectMethods(pass *analysis.Pass, typeFiles map[types.Object]string) []me
 	for _, file := range pass.Files {
 		for _, decl := range file.Decls {
 			funcDecl, ok := decl.(*ast.FuncDecl)
-			if !ok || funcDecl.Recv == nil {
+			if !succeeded(ok) || isNilRecv(funcDecl.Recv) {
 				continue
 			}
 			typeObj, methodName := receiverType(pass, funcDecl)
@@ -136,7 +164,7 @@ func checkSorted(pass *analysis.Pass, methods []methodInfo) {
 
 		max := ""
 		for _, m := range group {
-			if max != "" && strings.Compare(m.methodName, max) < 0 {
+			if isNonEmpty(max) && isBefore(m.methodName, max) {
 				pass.Report(analysis.Diagnostic{
 					Pos:     m.decl.Name.Pos(),
 					Message: report.MethodShouldBeSorted(m.typeName, m.methodName, max),
@@ -152,11 +180,11 @@ func checkSorted(pass *analysis.Pass, methods []methodInfo) {
 
 func receiverType(pass *analysis.Pass, funcDecl *ast.FuncDecl) (types.Object, string) {
 	funcObj, ok := pass.TypesInfo.Defs[funcDecl.Name].(*types.Func)
-	if !ok || funcObj == nil {
+	if !succeeded(ok) || isNilFunc(funcObj) {
 		return nil, ""
 	}
 	sig, ok := funcObj.Type().(*types.Signature)
-	if !ok || sig.Recv() == nil {
+	if !succeeded(ok) || isNilVar(sig.Recv()) {
 		return nil, ""
 	}
 	recvType := sig.Recv().Type()

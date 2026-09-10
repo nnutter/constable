@@ -18,4 +18,5 @@ func TestMessages(t *testing.T) {
 	assert.Equal(t, "use testify/assert instead of testing.Error", report.UseTestifyInstead("Error", "assert"))
 	assert.Equal(t, "use testify/require instead of testing.Fatal", report.UseTestifyInstead("Fatal", "require"))
 	assert.Equal(t, "cyclomatic complexity 12 exceeds limit 10 (function F)", report.ComplexityExceedsLimit("F", 12, 10))
+	assert.Equal(t, `use predicate function instead of "a" in compound conditional`, report.UsePredicateInstead("a"))
 }
