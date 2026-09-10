@@ -124,7 +124,7 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 		return
 	}
 
-	if len(args) == 1 && strings.HasSuffix(args[0], ".cfg") {
+	if hasSingleArg(args) && isConfig(args[0]) {
 		unitchecker.Run(args[0], analyzers)
 		panic("unreachable")
 	}
@@ -133,6 +133,100 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 }
 
 var diff bool // accepted for multichecker compatibility; no analyzers emit fixes.
+
+func succeeded(ok bool) bool {
+	return ok
+}
+
+func hasSingleArg(args []string) bool {
+	return len(args) == 1
+}
+
+func isConfig(path string) bool {
+	return strings.HasSuffix(path, ".cfg")
+}
+
+func hasEnabled(enabled map[*analysis.Analyzer]*triState) bool {
+	return enabled != nil
+}
+
+func hasAnalyzer(enabled map[*analysis.Analyzer]*triState, a *analysis.Analyzer) bool {
+	if enabled == nil {
+		return false
+	}
+	return enabled[a] != nil
+}
+
+func isNotDisabledFor(enabled map[*analysis.Analyzer]*triState, a *analysis.Analyzer) bool {
+	if enabled == nil {
+		return false
+	}
+	state := enabled[a]
+	if state == nil {
+		return false
+	}
+	return *state != setFalse
+}
+
+func isEnabledFor(enabled map[*analysis.Analyzer]*triState, a *analysis.Analyzer) bool {
+	if enabled == nil {
+		return false
+	}
+	state := enabled[a]
+	if state == nil {
+		return false
+	}
+	return *state == setTrue
+}
+
+func isBoolFlagged(ok bool) bool {
+	return ok
+}
+
+func hasVersion(info *debug.BuildInfo) bool {
+	if info == nil {
+		return false
+	}
+	return info.Main.Version != ""
+}
+
+func isNotDevel(info *debug.BuildInfo) bool {
+	if info == nil {
+		return false
+	}
+	return info.Main.Version != "(devel)"
+}
+
+func versionOf(info *debug.BuildInfo) string {
+	if info == nil {
+		return ""
+	}
+	return info.Main.Version
+}
+
+func isNilErr(err error) bool {
+	return err == nil
+}
+
+func isEmptyInitial(initial []*packages.Package) bool {
+	return len(initial) == 0
+}
+
+func isFirstLineOrLater(i int) bool {
+	return 1 <= i
+}
+
+func isWithinLines(i int, lines []string) bool {
+	return i <= len(lines)
+}
+
+func isRoot(act *checker.Action) bool {
+	return act.IsRoot
+}
+
+func hasDiagnostics(diagnostics []analysis.Diagnostic) bool {
+	return len(diagnostics) > 0
+}
 
 // filterAnalyzers mirrors multichecker's -name enable-flag semantics.
 func filterAnalyzers(analyzers []*analysis.Analyzer, enabled map[*analysis.Analyzer]*triState) []*analysis.Analyzer {
@@ -152,7 +246,7 @@ func filterAnalyzers(analyzers []*analysis.Analyzer, enabled map[*analysis.Analy
 	if hasFalse {
 		var keep []*analysis.Analyzer
 		for _, a := range analyzers {
-			if enabled != nil && enabled[a] != nil && *enabled[a] != setFalse {
+			if hasEnabled(enabled) && hasAnalyzer(enabled, a) && isNotDisabledFor(enabled, a) {
 				keep = append(keep, a)
 			}
 		}
@@ -164,7 +258,7 @@ func filterAnalyzers(analyzers []*analysis.Analyzer, enabled map[*analysis.Analy
 func keepEnabled(analyzers []*analysis.Analyzer, enabled map[*analysis.Analyzer]*triState) []*analysis.Analyzer {
 	var keep []*analysis.Analyzer
 	for _, a := range analyzers {
-		if enabled != nil && enabled[a] != nil && *enabled[a] == setTrue {
+		if hasEnabled(enabled) && hasAnalyzer(enabled, a) && isEnabledFor(enabled, a) {
 			keep = append(keep, a)
 		}
 	}
@@ -184,7 +278,7 @@ func writeFlagsJSON() {
 			return
 		}
 		b, ok := f.Value.(interface{ IsBoolFlag() bool })
-		flags = append(flags, jsonFlag{f.Name, ok && b.IsBoolFlag(), f.Usage})
+		flags = append(flags, jsonFlag{f.Name, isBoolFlagged(ok) && b.IsBoolFlag(), f.Usage})
 	})
 	data, err := json.MarshalIndent(flags, "", "\t")
 	if err != nil {
@@ -205,8 +299,8 @@ func resolveVersion(version string) string {
 	if version != "" {
 		return version
 	}
-	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
-		return info.Main.Version
+	if info, ok := debug.ReadBuildInfo(); succeeded(ok) && hasVersion(info) && isNotDevel(info) {
+		return versionOf(info)
 	}
 	return "devel"
 }
@@ -334,7 +428,7 @@ func load(patterns []string, includeTests, allSyntax bool) ([]*packages.Package,
 		Tests: includeTests,
 	}
 	initial, err := packages.Load(&conf, patterns...)
-	if err == nil && len(initial) == 0 {
+	if isNilErr(err) && isEmptyInitial(initial) {
 		err = fmt.Errorf("%s matched no packages", strings.Join(patterns, " "))
 	}
 	return initial, err
@@ -402,7 +496,7 @@ func printDiagnostic(w *os.File, fset *token.FileSet, cwd string, contextLines i
 			data, _ := os.ReadFile(abs.Filename)
 			lines := strings.Split(string(data), "\n")
 			for i := abs.Line - contextLines; i <= endPosition.Line+contextLines; i++ {
-				if 1 <= i && i <= len(lines) {
+				if isFirstLineOrLater(i) && isWithinLines(i, lines) {
 					_, _ = fmt.Fprintf(w, "%d\t%s\n", i, lines[i-1])
 				}
 			}
@@ -480,7 +574,7 @@ func printJSON(w *os.File, graph *checker.Graph, cwd string) error {
 		var value any
 		if act.Err != nil {
 			value = map[string]string{"error": act.Err.Error()}
-		} else if act.IsRoot && len(act.Diagnostics) > 0 {
+		} else if isRoot(act) && hasDiagnostics(act.Diagnostics) {
 			diagnostics := make([]jsonDiagnostic, 0, len(act.Diagnostics))
 			for _, diag := range act.Diagnostics {
 				diagnostics = append(diagnostics, encodeDiagnostic(diag, act.Package.Fset, cwd))
