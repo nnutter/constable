@@ -281,6 +281,12 @@ func Run(args []string, analyzers []*analysis.Analyzer, opts Options) (exitcode 
 		return 1
 	}
 
+	exitAtLeast(exitCode(graph))
+
+	return exitcode
+}
+
+func exitCode(graph *checker.Graph) int {
 	var numErrors, rootDiags int
 	for act := range graph.All() {
 		if act.Err != nil {
@@ -291,12 +297,12 @@ func Run(args []string, analyzers []*analysis.Analyzer, opts Options) (exitcode 
 	}
 
 	if numErrors > 0 {
-		exitcode = 1
+		return 1
 	} else if rootDiags > 0 {
-		exitcode = 3
+		return 3
 	}
 
-	return exitcode
+	return 0
 }
 
 func needFacts(analyzers []*analysis.Analyzer) bool {
