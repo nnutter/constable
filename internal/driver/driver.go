@@ -147,13 +147,7 @@ func filterAnalyzers(analyzers []*analysis.Analyzer, enabled map[*analysis.Analy
 	}
 
 	if hasTrue {
-		var keep []*analysis.Analyzer
-		for _, a := range analyzers {
-			if enabled != nil && enabled[a] != nil && *enabled[a] == setTrue {
-				keep = append(keep, a)
-			}
-		}
-		return keep
+		return keepEnabled(analyzers, enabled)
 	}
 	if hasFalse {
 		var keep []*analysis.Analyzer
@@ -165,6 +159,16 @@ func filterAnalyzers(analyzers []*analysis.Analyzer, enabled map[*analysis.Analy
 		return keep
 	}
 	return analyzers
+}
+
+func keepEnabled(analyzers []*analysis.Analyzer, enabled map[*analysis.Analyzer]*triState) []*analysis.Analyzer {
+	var keep []*analysis.Analyzer
+	for _, a := range analyzers {
+		if enabled != nil && enabled[a] != nil && *enabled[a] == setTrue {
+			keep = append(keep, a)
+		}
+	}
+	return keep
 }
 
 type jsonFlag struct {
