@@ -4,10 +4,12 @@ package driver
 
 import (
 	"cmp"
+	"crypto/sha256"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"go/token"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -61,6 +63,40 @@ func (t *triState) String() string {
 	}
 }
 
+// versionValue implements the analysis driver -V protocol.
+// -V and -V=true print the human-readable version.
+// -V=full prints the build ID form required by "go vet -vettool".
+type versionValue string
+
+const (
+	versionShort versionValue = "true"
+	versionFull  versionValue = "full"
+)
+
+func (v *versionValue) Get() any { return string(*v) }
+
+func (v *versionValue) IsBoolFlag() bool { return true }
+
+func (v *versionValue) Set(s string) error {
+	switch versionValue(s) {
+	case versionShort, versionFull:
+		*v = versionValue(s)
+		return nil
+	default:
+		return fmt.Errorf("unsupported flag value: -V=%s (use -V=full)", s)
+	}
+}
+
+func (v *versionValue) String() string { return string(*v) }
+
+func isFullVersion(v versionValue) bool {
+	return v == versionFull
+}
+
+func isShortVersion(v versionValue) bool {
+	return v == versionShort
+}
+
 // Main is the main function for the constable command.
 // version is the release version injected at build time via
 // -ldflags "-X main.version=..."; when empty, the embedded build info is used.
@@ -92,7 +128,8 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 	}
 
 	printFlags := flag.Bool("flags", false, "print analyzer flags in JSON")
-	showVersion := flag.Bool("V", false, "print version and exit")
+	var showVersion versionValue
+	flag.Var(&showVersion, "V", "print version and exit")
 	flag.BoolVar(&opts.JSON, "json", false, "emit JSON output")
 	flag.IntVar(&opts.Context, "c", -1, "display offending line with this many lines of context")
 	flag.BoolVar(&opts.Fix, "fix", false, "apply all suggested fixes")
@@ -106,8 +143,7 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 		return
 	}
 
-	if *showVersion {
-		writeVersion(progname, version)
+	if handledVersion(showVersion, progname, version) {
 		return
 	}
 
@@ -287,8 +323,39 @@ func writeFlagsJSON() {
 	_, _ = fmt.Fprintf(os.Stdout, "%s", data)
 }
 
+func handledVersion(showVersion versionValue, progname, version string) bool {
+	switch {
+	case isShortVersion(showVersion):
+		writeVersion(progname, version)
+		return true
+	case isFullVersion(showVersion):
+		writeVetVersion()
+		return true
+	default:
+		return false
+	}
+}
+
 func writeVersion(progname, version string) {
 	_, _ = fmt.Fprintf(os.Stdout, "%s %s\n", progname, resolveVersion(version))
+}
+
+func writeVetVersion() {
+	progname, err := os.Executable()
+	if err != nil {
+		log.Fatal(err)
+	}
+	f, err := os.Open(progname)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() { _ = f.Close() }()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		log.Fatal(err)
+	}
+	_, _ = fmt.Fprintf(os.Stdout, "%s version devel comments-go-here buildID=%x\n", progname, h.Sum(nil))
 }
 
 // resolveVersion prefers the injected version and falls back to the
