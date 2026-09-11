@@ -309,11 +309,28 @@ func buildBinary(t *testing.T) string {
 
 func TestCLIVersionInjected(t *testing.T) {
 	binary := buildBinaryWithLDFlags(t, "-X", "main.version=v9.9.9-test")
+	want := strings.TrimSpace(filepath.Base(binary)) + " v9.9.9-test"
 
-	command := exec.Command(binary, "-V")
+	for _, args := range [][]string{{"-V"}, {"-V=true"}} {
+		command := exec.Command(binary, args...)
+		output, err := command.CombinedOutput()
+		require.NoError(t, err, "args=%v output=%s", args, output)
+		assert.Equal(t, want, strings.TrimSpace(string(output)), "args=%v", args)
+	}
+}
+
+func TestCLIVersionFull(t *testing.T) {
+	binary := buildBinary(t)
+
+	command := exec.Command(binary, "-V=full")
 	output, err := command.CombinedOutput()
-	require.NoError(t, err)
-	assert.Equal(t, strings.TrimSpace(filepath.Base(binary))+" v9.9.9-test", strings.TrimSpace(string(output)))
+	require.NoError(t, err, string(output))
+
+	fields := strings.Fields(strings.TrimSpace(string(output)))
+	require.GreaterOrEqual(t, len(fields), 3)
+	assert.Equal(t, "version", fields[1])
+	assert.Contains(t, fields[2], "devel")
+	assert.True(t, strings.HasPrefix(fields[len(fields)-1], "buildID="), "got %q", strings.TrimSpace(string(output)))
 }
 
 func buildBinaryWithLDFlags(t *testing.T, ldflags ...string) string {
