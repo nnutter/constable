@@ -43,3 +43,33 @@ type UnsortedBox[T any] struct {
 func (b UnsortedBox[T]) B() {}
 
 func (b UnsortedBox[T]) A() {} // want "method A of type UnsortedBox should be sorted before method B"
+
+type Grouped struct{}
+
+func helperBefore() {}
+
+func (g Grouped) A() {}
+
+func (g Grouped) B() {}
+
+func helperAfter() {}
+
+type SplitByFunc struct{}
+
+func (s SplitByFunc) A() {}
+
+func intervening() {}
+
+func (s SplitByFunc) B() {} // want "method B of type SplitByFunc should be grouped with method A"
+
+type InterleavedA struct{}
+
+type InterleavedB struct{}
+
+func (a InterleavedA) A() {}
+
+func (b InterleavedB) A() {}
+
+func (a InterleavedA) B() {} // want "method B of type InterleavedA should be grouped with method A"
+
+func (b InterleavedB) B() {} // want "method B of type InterleavedB should be grouped with method A"
