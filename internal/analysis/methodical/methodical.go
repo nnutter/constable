@@ -15,7 +15,7 @@ import (
 
 var Analyzer = &analysis.Analyzer{
 	Name: "methodical",
-	Doc:  "reports methods not in same file as type or not sorted alphabetically",
+	Doc:  "reports methods not in same file as type, not grouped together, or not sorted alphabetically",
 	Run:  run,
 }
 
@@ -26,6 +26,7 @@ func run(pass *analysis.Pass) (any, error) {
 		checkSameFile(pass, typeFiles, m)
 	}
 	checkSorted(pass, methods)
+	checkGrouped(pass, typeFiles)
 
 	return nil, nil
 }
@@ -174,6 +175,77 @@ func checkSorted(pass *analysis.Pass, methods []methodInfo) {
 			if strings.Compare(m.methodName, max) > 0 {
 				max = m.methodName
 			}
+		}
+	}
+}
+
+type groupState struct {
+	lastName    string
+	interrupted bool
+}
+
+func isInterrupted(state *groupState) bool {
+	return state.interrupted
+}
+
+func isKnownReceiver(typeObj types.Object, typeFiles map[types.Object]string) bool {
+	_, ok := typeFiles[typeObj]
+	return ok
+}
+
+func isOtherType(obj, current types.Object) bool {
+	return obj != current
+}
+
+func checkGrouped(pass *analysis.Pass, typeFiles map[types.Object]string) {
+	for _, file := range pass.Files {
+		checkFileGrouped(pass, file, typeFiles)
+	}
+}
+
+func checkFileGrouped(pass *analysis.Pass, file *ast.File, typeFiles map[types.Object]string) {
+	states := make(map[types.Object]*groupState)
+	for _, decl := range file.Decls {
+		funcDecl, ok := decl.(*ast.FuncDecl)
+		if !succeeded(ok) {
+			continue
+		}
+		typeObj, methodName := receiverType(pass, funcDecl)
+		if typeObj == nil {
+			interruptAllGroups(states)
+			continue
+		}
+		if !isKnownReceiver(typeObj, typeFiles) {
+			interruptAllGroups(states)
+			continue
+		}
+		state := states[typeObj]
+		if state != nil && isInterrupted(state) {
+			pass.Report(analysis.Diagnostic{
+				Pos:     funcDecl.Name.Pos(),
+				Message: report.MethodShouldBeGrouped(typeObj.Name(), methodName, state.lastName),
+			})
+		}
+		if state == nil {
+			state = &groupState{}
+			states[typeObj] = state
+		}
+		state.lastName = methodName
+		state.interrupted = false
+		interruptOtherGroups(states, typeObj)
+	}
+}
+
+func interruptAllGroups(states map[types.Object]*groupState) {
+	for _, state := range states {
+		state.interrupted = true
+	}
+}
+
+func interruptOtherGroups(states map[types.Object]*groupState, current types.Object) {
+	for obj, state := range states {
+		if isOtherType(obj, current) {
+			state.interrupted = true
 		}
 	}
 }
