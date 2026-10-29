@@ -1,0 +1,144 @@
+amends "package://github.com/jdx/hk/releases/download/v2.8.0/hk@2.8.0#/Config.pkl"
+
+import "package://github.com/jdx/hk/releases/download/v2.8.0/hk@2.8.0#/Builtins.pkl"
+
+// Module-wide writers run only through the explicit fix-all hook. Scoped fixes
+// and pre-commit check these tools without changing unselected Go files.
+local goFixCheck = (Builtins.go_fix) {
+  depends = List("go_fumpt")
+  check_diff = null
+  fix = null
+  check = "diff=$(go fix -diff ./...) || exit $?; printf '%s' \"$diff\"; test -z \"$diff\""
+}
+local tidyCheck = (Builtins.gomod_tidy) {
+  stage = null
+  depends = List("testifylint")
+  check_diff = null
+  fix = null
+  check = "go mod tidy -diff"
+}
+
+// Serial steps run in definition order. Import repair is defined first so
+// it precedes the type-dependent `go fix` and analyzers: they fail on
+// uncompilable imports instead of repairing them.
+local goFiles = List("**/*.go", "go.mod", "go.sum")
+local commonSteps = new Mapping<String, Step> {
+  ["go_imports"] = (Builtins.go_imports) {
+    // All command variants must use the same local import grouping.
+    check_list_files = null
+    check_diff = null
+    check =
+      "diff=$(goimports -d -local \"$(go list -m)\" {{files}}) || exit $?; printf '%s' \"$diff\"; test -z \"$diff\""
+    fix = "goimports -w -local \"$(go list -m)\" {{files}}"
+  }
+  ["go_fumpt"] = (Builtins.go_fumpt) {
+    depends = List("go_imports")
+    // This fixture tests parenthesized predicates that gofumpt removes.
+    exclude = "internal/analysis/predicates/testdata/src/p/p.go"
+  }
+  ["go_fix"] = goFixCheck
+  ["testifylint"] {
+    glob = goFiles
+    depends = List("go_fix")
+    check = "go tool testifylint ./..."
+  }
+  ["gomod_tidy"] = tidyCheck
+  ["go_sec"] = (Builtins.go_sec) {
+    depends = List("gomod_tidy")
+    glob = goFiles
+  }
+  ["go_vet"] = (Builtins.go_vet) {
+    depends = List("gomod_tidy")
+    glob = goFiles
+  }
+  ["go_vuln_check"] = (Builtins.go_vuln_check) {
+    depends = List("gomod_tidy")
+    glob = goFiles
+  }
+  ["staticcheck"] = (Builtins.staticcheck) {
+    depends = List("gomod_tidy")
+    glob = goFiles
+  }
+  ["constable"] {
+    glob = goFiles
+    depends = List("gomod_tidy")
+    check = "go run ./cmd/constable ./..."
+  }
+  ["errcheck"] {
+    glob = goFiles
+    depends = List("gomod_tidy")
+    check = "errcheck ./..."
+  }
+  ["go-check-sumtype"] {
+    glob = goFiles
+    depends = List("gomod_tidy")
+    check = "go-check-sumtype ./..."
+  }
+  ["nilaway"] {
+    glob = goFiles
+    depends = List("gomod_tidy")
+    check = "nilaway -include-pkgs \"$(go list -m)\" ./..."
+  }
+  ["mdlint"] {
+    glob = "**/*.md"
+    check = "mdlint format --check {{files}} && mdlint check --no-fix {{files}}"
+    fix = "mdlint format {{files}} && mdlint check --fix {{files}}"
+  }
+  ["gitleaks"] = Builtins.gitleaks
+  ["pkl_format"] = Builtins.pkl_format
+  ["pkl"] = (Builtins.pkl) {
+    depends = List("pkl_format")
+  }
+  ["tombi_format"] = Builtins.tombi_format
+  ["tombi"] = (Builtins.tombi) {
+    depends = List("tombi_format")
+  }
+  ["yamlfmt"] = Builtins.yamlfmt
+}
+
+steps = commonSteps
+
+hooks {
+  ["commit-msg"] {
+    fix = true
+    steps {
+      ["change-id"] {
+        fix = "timber review commit-msg {{commit_msg_file}}"
+      }
+    }
+  }
+  ["pre-commit"] {
+    fix = true
+    stage = true
+    stash = "git"
+    steps {
+      // No file filter: scan every staged change, including arbitrary types,
+      // binary files, deletions, and commits without Go or Markdown changes.
+      // The git-mode scan only sees text diffs, so staged binary bytes are
+      // checked out to a temporary directory and scanned explicitly.
+      ["gitleaks"] = (Builtins.gitleaks) {
+        check =
+          "gitleaks git --redact --pre-commit --staged && tmp=$(mktemp -d) || exit $?; trap 'rm -rf \"$tmp\"' EXIT INT TERM; git diff --cached --name-only -z --diff-filter=ACMRT > \"$tmp/list\" || exit $?; git checkout-index -z --stdin --prefix=\"$tmp/tree/\" < \"$tmp/list\" || exit $?; mkdir -p \"$tmp/tree\" || exit $?; gitleaks dir --redact --verbose --no-banner \"$tmp/tree\" || exit $?"
+      }
+    }
+  }
+  ["fix-all"] {
+    fix = true
+    stage = false
+    steps = (commonSteps) {
+      ["go_fix"] = (Builtins.go_fix) {
+        depends = List("go_fumpt")
+        check_diff = null
+        exclusive = true
+      }
+      ["testifylint"] {
+        fix = "go tool testifylint -fix ./..."
+        exclusive = true
+      }
+      ["gomod_tidy"] = (Builtins.gomod_tidy) {
+        depends = List("testifylint")
+        exclusive = true
+      }
+    }
+  }
+}
