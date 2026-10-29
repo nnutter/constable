@@ -113,9 +113,8 @@ func (c Count) Increment() Count {
 
 ## Predicates
 
-The predicates analyzer reports `&&` and `||` operands, except the
-first, that are not predicate-function calls. The first operand always
-executes, so coverage observes short-circuiting through the rest.
+The predicates analyzer reports `&&` and `||` operands, except the first, that are not predicate-function calls.
+The first operand always executes, so coverage observes short-circuiting through the rest.
 
 ```go
 func F(a, b bool) {
@@ -131,18 +130,16 @@ func G(a bool) {
 }
 ```
 
-The check covers `if` and `for` conditions and bool assignments such
-as `c := a && b`, including `!a`, field and map access, and
-comparisons. Operands that are already calls, compound expressions,
-or `true`/`false`/`nil` are allowed.
+The check covers `if` and `for` conditions and bool assignments such as `c := a && b`, including `!a`, field and map access, and comparisons.
+Operands that are already calls, compound expressions, or `true`/`false`/`nil` are allowed.
 
 ## Agent workflow
 
 1. Identify functions and methods whose API contract should not mutate caller-owned data.
-2. Add `//constable:nonmutating` immediately before each eligible declaration.
-3. Run `constable ./...` from the Go module root.
-4. For every diagnostic, either remove the caller-visible mutation or remove the annotation if the contract is incorrect.
-5. Re-run the analyzer and the package tests before finalizing the change.
+1. Add `//constable:nonmutating` immediately before each eligible declaration.
+1. Run `constable ./...` from the Go module root.
+1. For every diagnostic, either remove the caller-visible mutation or remove the annotation if the contract is incorrect.
+1. Re-run the analyzer and the package tests before finalizing the change.
 
 Prefer returning a new value or making a defensive copy when the implementation needs to transform caller-provided data.
 Do not silence a diagnostic by merely reassigning a parameter while continuing to mutate data reachable through it.
