@@ -1,5 +1,4 @@
 name: Update Tap
-
 on:
   release:
     types: [published]
@@ -9,14 +8,11 @@ on:
         description: Release tag to publish to nnutter/homebrew-tap
         required: true
         type: string
-
 permissions:
   contents: read
-
 concurrency:
   group: update-tap
   cancel-in-progress: false
-
 jobs:
   update-formula:
     runs-on: ubuntu-latest
@@ -42,7 +38,6 @@ jobs:
             exit 1
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-
       - name: Generate a token
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -53,14 +48,12 @@ jobs:
           repositories: ${{ env.TAP_REPOSITORY }}
           permission-contents: write
           permission-pull-requests: write
-
       - name: Check out the tap
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ env.TAP_OWNER }}/${{ env.TAP_REPOSITORY }}
           token: ${{ steps.app-token.outputs.token }}
           persist-credentials: false
-
       - name: Skip when the formula already uses this tag
         id: needed
         env:
@@ -74,7 +67,6 @@ jobs:
           else
             echo "needed=true" >> "$GITHUB_OUTPUT"
           fi
-
       - name: Configure git for the app
         if: steps.needed.outputs.needed == 'true'
         env:
@@ -84,13 +76,11 @@ jobs:
           user_id="$(gh api "/users/${APP_SLUG}[bot]" --jq .id)"
           git config user.name "${APP_SLUG}[bot]"
           git config user.email "${user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
-
       - name: Create the formula branch
         if: steps.needed.outputs.needed == 'true'
         env:
           BRANCH_NAME: formula-updates/${{ env.FORMULA_NAME }}-${{ steps.release.outputs.tag }}
         run: git switch --create "$BRANCH_NAME"
-
       - name: Update the formula
         if: steps.needed.outputs.needed == 'true'
         env:
@@ -98,7 +88,6 @@ jobs:
           HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
         run: bin/update-formula "$FORMULA_NAME" "$TAG"
-
       - name: Push the formula branch
         if: steps.needed.outputs.needed == 'true'
         env:
@@ -110,7 +99,6 @@ jobs:
           git push --force-with-lease \
             "https://x-access-token:${GH_TOKEN}@github.com/${TAP_OWNER}/${TAP_REPOSITORY}.git" \
             "HEAD:refs/heads/${BRANCH_NAME}"
-
       - name: Open a pull request
         if: steps.needed.outputs.needed == 'true'
         env:
@@ -142,7 +130,6 @@ jobs:
             --head "$BRANCH_NAME" \
             --base "$(gh repo view "$tap" --json defaultBranchRef --jq .defaultBranchRef.name)" \
             --body "Update ${FORMULA_NAME} to ${TAG} from ${UPSTREAM_REPOSITORY}."
-
       - name: Enable auto-merge
         if: steps.needed.outputs.needed == 'true'
         env:
