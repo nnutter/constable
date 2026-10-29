@@ -1,4 +1,4 @@
 [pre-commit.commands.format]
 glob = ["**/*.go"]
-run = 'mise run pre-commit {staged_files}'
+run = "mise run pre-commit {staged_files}"
 stage_fixed = true
