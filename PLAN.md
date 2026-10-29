@@ -67,9 +67,9 @@ The command-line tool can use `singlechecker` while there is only one analyzer a
 Expected flow:
 
 1. Load packages through the standard analysis driver.
-2. Parse `//constable:` directives from function and method declarations.
-3. For each recognized directive, run the corresponding analyzer logic.
-4. Emit diagnostics through `analysis.Pass.Report` with stable, actionable messages.
+1. Parse `//constable:` directives from function and method declarations.
+1. For each recognized directive, run the corresponding analyzer logic.
+1. Emit diagnostics through `analysis.Pass.Report` with stable, actionable messages.
 
 The analyzer should avoid defining its own package loading, type checking, or diagnostic protocol unless the standard `go/analysis` path proves insufficient.
 
@@ -187,11 +187,11 @@ The `nonmutating` analyzer should depend on `buildssa.Analyzer` and inspect the 
 Likely implementation outline:
 
 1. Find annotated `*ast.FuncDecl` nodes.
-2. Resolve each declaration to its `*types.Func` object.
-3. Find the corresponding `*ssa.Function` from the `buildssa` result.
-4. Mark SSA values that originate from parameters and receivers.
-5. Track aliases derived from those values where practical.
-6. Report stores, map updates, field updates, slice element updates, and relevant built-ins when their target is parameter-derived caller-visible state.
+1. Resolve each declaration to its `*types.Func` object.
+1. Find the corresponding `*ssa.Function` from the `buildssa` result.
+1. Mark SSA values that originate from parameters and receivers.
+1. Track aliases derived from those values where practical.
+1. Report stores, map updates, field updates, slice element updates, and relevant built-ins when their target is parameter-derived caller-visible state.
 
 SSA concepts likely to matter:
 
@@ -299,25 +299,25 @@ Direct `gopls` integration can wait until the check is useful and well tested.
 These questions should be resolved incrementally as implementation begins:
 
 1. Should `//constable:` options use struct-tag syntax, Go directive-style syntax, or a simpler custom syntax?
-2. Should unknown `//constable:` directives be diagnostics, ignored comments, or reserved for future tools?
-3. Should `//constable:nonmutating` forbid mutation of package globals, or only mutation of caller-visible argument and receiver state?
-4. How should calls to unanalyzed functions be handled: ignored, reported as uncertain, or controlled by a strict mode?
-5. Should calls to methods on parameter-derived values be assumed mutating when the receiver is mutable?
-6. How should interface calls and function values be modeled?
-7. Should mutation through `unsafe`, reflection, cgo, or assembly be reported as unsupported in annotated functions?
-8. Should appending to a slice parameter be considered mutation only when it writes to the existing backing array, or always treated as caller-visible?
-9. Should the analyzer permit mutations to data reachable from parameters if the function can prove the data was freshly allocated inside the function?
-10. The project name and module path are `constable` and `github.com/nnutter/constable`.
+1. Should unknown `//constable:` directives be diagnostics, ignored comments, or reserved for future tools?
+1. Should `//constable:nonmutating` forbid mutation of package globals, or only mutation of caller-visible argument and receiver state?
+1. How should calls to unanalyzed functions be handled: ignored, reported as uncertain, or controlled by a strict mode?
+1. Should calls to methods on parameter-derived values be assumed mutating when the receiver is mutable?
+1. How should interface calls and function values be modeled?
+1. Should mutation through `unsafe`, reflection, cgo, or assembly be reported as unsupported in annotated functions?
+1. Should appending to a slice parameter be considered mutation only when it writes to the existing backing array, or always treated as caller-visible?
+1. Should the analyzer permit mutations to data reachable from parameters if the function can prove the data was freshly allocated inside the function?
+1. The project name and module path are `constable` and `github.com/nnutter/constable`.
 
 ## First Implementation Milestone
 
 The first milestone is a minimal but real analyzer:
 
 1. Create a Go module.
-2. Add a `nonmutating` analyzer using `go/analysis` and `buildssa`.
-3. Parse `//constable:nonmutating` comments on function and method declarations.
-4. Detect direct pointer, receiver, slice, and map mutations in annotated functions.
-5. Add analyzer tests for the supported cases and explicit non-cases.
-6. Add a thin command-line entry point using `singlechecker`.
+1. Add a `nonmutating` analyzer using `go/analysis` and `buildssa`.
+1. Parse `//constable:nonmutating` comments on function and method declarations.
+1. Detect direct pointer, receiver, slice, and map mutations in annotated functions.
+1. Add analyzer tests for the supported cases and explicit non-cases.
+1. Add a thin command-line entry point using `singlechecker`.
 
 This milestone should prioritize a small, reviewable implementation over a broad nonmutation model.

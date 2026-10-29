@@ -66,10 +66,9 @@ func (b Buffer) ClearFirstByte() {
 
 ## Complexity
 
-The complexity analyzer reports functions and methods whose cyclomatic
-complexity exceeds a limit. Complexity starts at 1 and adds 1 for each
-`if`, `for`, `range`, `case`, `select` clause, `&&`, and `||`. Closures
-fold into the enclosing function and default clauses count.
+The complexity analyzer reports functions and methods whose cyclomatic complexity exceeds a limit.
+Complexity starts at 1 and adds 1 for each `if`, `for`, `range`, `case`, `select` clause, `&&`, and `||`.
+Closures fold into the enclosing function and default clauses count.
 
 ```sh
 constable ./...
@@ -80,9 +79,8 @@ The limit defaults to 10 and is configured with `-complexity.limit`.
 
 ## Predicates
 
-The predicates analyzer reports `&&` and `||` operands, except the
-first, that are not predicate-function calls. The first operand always
-executes, so coverage observes short-circuiting through the rest.
+The predicates analyzer reports `&&` and `||` operands, except the first, that are not predicate-function calls.
+The first operand always executes, so coverage observes short-circuiting through the rest.
 
 ```go
 if a && b { // reported: use a && isB()
@@ -92,9 +90,7 @@ if a && isB() { // allowed
 }
 ```
 
-The check also covers `for` conditions and bool assignments such as
-`c := a && b`, including negated variables, field and map access,
-and comparisons.
+The check also covers `for` conditions and bool assignments such as `c := a && b`, including negated variables, field and map access, and comparisons.
 
 ## Development
 

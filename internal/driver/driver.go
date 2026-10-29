@@ -345,7 +345,7 @@ func writeVetVersion() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	f, err := os.Open(progname)
+	f, err := os.Open(progname) // #nosec G304 -- progname comes from os.Executable.
 	if err != nil {
 		log.Fatal(err)
 	}
