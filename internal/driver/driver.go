@@ -3,18 +3,23 @@
 package driver
 
 import (
+	"bytes"
 	"cmp"
 	"crypto/sha256"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"go/ast"
+	"go/parser"
 	"go/token"
 	"io"
 	"log"
+	"maps"
 	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
+	"sync"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/checker"
@@ -28,6 +33,7 @@ type Options struct {
 	Context      int
 	IncludeTests bool
 	Fix          bool
+	Diff         bool
 }
 
 type triState int
@@ -133,7 +139,7 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 	flag.BoolVar(&opts.JSON, "json", false, "emit JSON output")
 	flag.IntVar(&opts.Context, "c", -1, "display offending line with this many lines of context")
 	flag.BoolVar(&opts.Fix, "fix", false, "apply all suggested fixes")
-	flag.BoolVar(&diff, "diff", false, "with -fix, don't update the files, but print a unified diff")
+	flag.BoolVar(&opts.Diff, "diff", false, "with -fix, don't update the files, but print a unified diff")
 	flag.BoolVar(&opts.IncludeTests, "test", true, "indicates whether test files should be analyzed, too")
 
 	flag.Parse()
@@ -167,8 +173,6 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 
 	os.Exit(Run(args, analyzers, opts))
 }
-
-var diff bool // accepted for multichecker compatibility; no analyzers emit fixes.
 
 func succeeded(ok bool) bool {
 	return ok
@@ -409,7 +413,11 @@ func Run(args []string, analyzers []*analysis.Analyzer, opts Options) (exitcode 
 		return 1
 	}
 
-	initial, err := load(args, opts.IncludeTests, needFacts(analyzers))
+	if opts.Fix {
+		return runFixes(args, analyzers, opts, cwd)
+	}
+
+	initial, _, err := load(args, opts.IncludeTests, needFacts(analyzers), nil)
 	if err != nil {
 		log.Print(err)
 		exitAtLeast(1)
@@ -427,25 +435,200 @@ func Run(args []string, analyzers []*analysis.Analyzer, opts Options) (exitcode 
 		return exitcode
 	}
 
-	if opts.Fix {
-		return exitcode
-	}
+	return outputResult(graph, cwd, opts, exitcode, false, nil)
+}
 
+// overlayAnalyzers makes pass.ReadFile consistent with the syntax loaded from
+// the overlay, including for required analyzers.
+func overlayAnalyzers(analyzers []*analysis.Analyzer, overlay map[string][]byte) []*analysis.Analyzer {
+	clones := make(map[*analysis.Analyzer]*analysis.Analyzer)
+	var clone func(*analysis.Analyzer) *analysis.Analyzer
+	clone = func(a *analysis.Analyzer) *analysis.Analyzer {
+		if c := clones[a]; c != nil {
+			return c
+		}
+		copy := *a
+		clones[a] = &copy
+		copy.Requires = make([]*analysis.Analyzer, len(a.Requires))
+		for i, req := range a.Requires {
+			copy.Requires[i] = clone(req)
+		}
+		copy.Run = func(pass *analysis.Pass) (any, error) {
+			read := pass.ReadFile
+			pass.ReadFile = func(name string) ([]byte, error) {
+				if data, ok := overlay[name]; ok {
+					return bytes.Clone(data), nil
+				}
+				return read(name)
+			}
+			// Required analyzer results are keyed by the original analyzers.
+			results := make(map[*analysis.Analyzer]any, len(pass.ResultOf))
+			for _, req := range a.Requires {
+				results[req] = pass.ResultOf[clones[req]]
+			}
+			pass.ResultOf = results
+			pass.Analyzer = a
+			return a.Run(pass)
+		}
+		return &copy
+	}
+	result := make([]*analysis.Analyzer, len(analyzers))
+	for i, a := range analyzers {
+		result[i] = clone(a)
+	}
+	return result
+}
+
+func runFixes(args []string, analyzers []*analysis.Analyzer, opts Options, cwd string) int {
+	original := make(map[string][]byte)
+	state := make(map[string][]byte)
+	history := []map[string][]byte{maps.Clone(state)}
+	var graph *checker.Graph
+	var passLimit int
+	for pass := 0; ; pass++ {
+		overlay := state
+		var sources map[*token.File][]byte
+		var err error
+		graph, sources, err = analyzeFixPass(args, analyzers, opts.IncludeTests, overlay)
+		if err != nil {
+			log.Print(err)
+			return 1
+		}
+		if pass == 0 {
+			passLimit = fixPassLimit(sources)
+		}
+		files, err := collectFixes(graph, sources)
+		if err != nil {
+			log.Print(err)
+			return outputResult(graph, cwd, opts, 0, true, overlay)
+		}
+		if len(files) == 0 {
+			if err := outputFinalFixes(original, state, cwd, opts.Diff); err != nil {
+				log.Print(err)
+				return outputResult(graph, cwd, opts, 0, true, overlay)
+			}
+			return outputResult(graph, cwd, opts, 0, false, overlay)
+		}
+		next, changed, err := prepareFixPass(files, original, state)
+		if err != nil {
+			log.Print(err)
+			return outputResult(graph, cwd, opts, 0, true, overlay)
+		}
+		if err := checkFixProgress(next, original, history, changed, pass+1, passLimit); err != nil {
+			log.Print(err)
+			return outputResult(graph, cwd, opts, 0, true, overlay)
+		}
+		state = next
+		history = append(history, maps.Clone(state))
+	}
+}
+
+// Allow at least one pass per initial source byte, with room for small files.
+// The bound prevents nonrepeating edits from running indefinitely.
+func fixPassLimit(sources map[*token.File][]byte) int {
+	files := make(map[string]bool)
+	var size int
+	for file, source := range sources {
+		if !files[file.Name()] {
+			files[file.Name()] = true
+			size += len(source)
+		}
+	}
+	return max(1000, size)
+}
+
+func analyzeFixPass(args []string, analyzers []*analysis.Analyzer, includeTests bool, overlay map[string][]byte) (*checker.Graph, map[*token.File][]byte, error) {
+	initial, sources, err := load(args, includeTests, needFacts(analyzers), overlay)
+	if err != nil {
+		return nil, nil, err
+	}
+	if packages.PrintErrors(initial) > 0 {
+		return nil, nil, fmt.Errorf("package loading failed")
+	}
+	graph, err := checker.Analyze(overlayAnalyzers(analyzers, overlay), initial, &checker.Options{})
+	return graph, sources, err
+}
+
+func outputFinalFixes(original, state map[string][]byte, cwd string, diff bool) error {
+	final := make(map[string]*fixFile, len(state))
+	for name, result := range state {
+		final[name] = &fixFile{original: original[name], result: result}
+	}
+	return outputFixes(final, cwd, diff)
+}
+
+func prepareFixPass(files map[string]*fixFile, original, state map[string][]byte) (map[string][]byte, bool, error) {
+	next := maps.Clone(state)
+	changed := false
+	for name, file := range files {
+		if err := prepareFixFile(name, file); err != nil {
+			return nil, false, err
+		}
+		if _, ok := original[name]; !ok {
+			original[name] = bytes.Clone(file.original)
+		}
+		if !bytes.Equal(file.original, file.result) {
+			changed = true
+		}
+		next[name] = bytes.Clone(file.result)
+	}
+	return next, changed, nil
+}
+
+func checkFixProgress(next, original map[string][]byte, history []map[string][]byte, changed bool, pass, limit int) error {
+	if !changed || repeatedState(next, original, history) {
+		return fmt.Errorf("suggested fixes make no progress or form a cycle")
+	}
+	if pass >= limit {
+		return fmt.Errorf("suggested fixes did not converge after %d passes", limit)
+	}
+	return nil
+}
+
+func repeatedState(next, original map[string][]byte, history []map[string][]byte) bool {
+	for _, previous := range history {
+		equal := true
+		for name, initial := range original {
+			before, ok := previous[name]
+			if !ok {
+				before = initial
+			}
+			after, ok := next[name]
+			if !ok {
+				after = initial
+			}
+			if !bytes.Equal(before, after) {
+				equal = false
+				break
+			}
+		}
+		if equal {
+			return true
+		}
+	}
+	return false
+}
+
+func outputResult(graph *checker.Graph, cwd string, opts Options, exitcode int, fixFailed bool, overlay map[string][]byte) int {
 	// With -json, the exit code is always zero.
 	if opts.JSON {
 		if err := printJSON(os.Stdout, graph, cwd); err != nil {
 			return 1
 		}
+		if fixFailed {
+			return 1
+		}
 		return exitcode
 	}
 
-	if err := printText(os.Stderr, graph, cwd, opts.Context); err != nil {
+	if err := printText(os.Stderr, graph, cwd, opts.Context, overlay); err != nil {
 		return 1
 	}
 
-	exitAtLeast(exitCode(graph))
-
-	return exitcode
+	if fixFailed {
+		return 1
+	}
+	return max(exitcode, exitCode(graph))
 }
 
 func exitCode(graph *checker.Graph) int {
@@ -485,21 +668,33 @@ func needFacts(analyzers []*analysis.Analyzer) bool {
 	return false
 }
 
-func load(patterns []string, includeTests, allSyntax bool) ([]*packages.Package, error) {
+func load(patterns []string, includeTests, allSyntax bool, overlay map[string][]byte) ([]*packages.Package, map[*token.File][]byte, error) {
 	mode := packages.LoadSyntax
 	if allSyntax {
 		mode = packages.LoadAllSyntax
 	}
 	mode |= packages.NeedModule
+	sources := make(map[*token.File][]byte)
+	var mu sync.Mutex
 	conf := packages.Config{
-		Mode:  mode,
-		Tests: includeTests,
+		Mode:    mode,
+		Tests:   includeTests,
+		Overlay: overlay,
+		ParseFile: func(fset *token.FileSet, filename string, src []byte) (*ast.File, error) {
+			file, err := parser.ParseFile(fset, filename, src, parser.AllErrors|parser.ParseComments)
+			if file != nil {
+				mu.Lock()
+				sources[fset.File(file.Pos())] = bytes.Clone(src)
+				mu.Unlock()
+			}
+			return file, err
+		},
 	}
 	initial, err := packages.Load(&conf, patterns...)
 	if isNilErr(err) && isEmptyInitial(initial) {
 		err = fmt.Errorf("%s matched no packages", strings.Join(patterns, " "))
 	}
-	return initial, err
+	return initial, sources, err
 }
 
 // relativePath returns filename relative to cwd, or filename unchanged
@@ -520,7 +715,7 @@ func RelativePosition(cwd string, fset *token.FileSet, pos token.Pos) token.Posi
 	return position
 }
 
-func printText(w *os.File, graph *checker.Graph, cwd string, contextLines int) error {
+func printText(w *os.File, graph *checker.Graph, cwd string, contextLines int, overlay map[string][]byte) error {
 	type key struct {
 		pos     token.Position
 		end     token.Position
@@ -542,14 +737,14 @@ func printText(w *os.File, graph *checker.Graph, cwd string, contextLines int) e
 				}
 				seen[k] = true
 
-				printDiagnostic(w, act.Package.Fset, cwd, contextLines, diag)
+				printDiagnostic(w, act.Package.Fset, cwd, contextLines, diag, overlay)
 			}
 		}
 	}
 	return nil
 }
 
-func printDiagnostic(w *os.File, fset *token.FileSet, cwd string, contextLines int, diag analysis.Diagnostic) {
+func printDiagnostic(w *os.File, fset *token.FileSet, cwd string, contextLines int, diag analysis.Diagnostic, overlay map[string][]byte) {
 	printOne := func(pos, end token.Pos, message string) {
 		abs := fset.Position(pos)
 		rel := abs
@@ -561,7 +756,10 @@ func printDiagnostic(w *os.File, fset *token.FileSet, cwd string, contextLines i
 			if !endPosition.IsValid() {
 				endPosition = abs
 			}
-			data, _ := os.ReadFile(abs.Filename)
+			data, ok := overlay[abs.Filename]
+			if !ok {
+				data, _ = os.ReadFile(abs.Filename)
+			}
 			lines := strings.Split(string(data), "\n")
 			for i := abs.Line - contextLines; i <= endPosition.Line+contextLines; i++ {
 				if isFirstLineOrLater(i) && isWithinLines(i, lines) {

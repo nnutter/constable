@@ -22,11 +22,12 @@ var Analyzer = &analysis.Analyzer{
 func run(pass *analysis.Pass) (any, error) {
 	typeFiles := collectTypeFiles(pass)
 	methods := collectMethods(pass, typeFiles)
+	reporter := &diagnosticReporter{pass: pass, methods: methods}
 	for _, m := range methods {
-		checkSameFile(pass, typeFiles, m)
+		checkSameFile(reporter, typeFiles, m)
 	}
-	checkSorted(pass, methods)
-	checkGrouped(pass, typeFiles)
+	checkSorted(reporter, methods)
+	checkGrouped(reporter, typeFiles)
 
 	return nil, nil
 }
@@ -127,19 +128,19 @@ func collectMethods(pass *analysis.Pass, typeFiles map[types.Object]string) []me
 	return methods
 }
 
-func checkSameFile(pass *analysis.Pass, typeFiles map[types.Object]string, m methodInfo) {
+func checkSameFile(reporter *diagnosticReporter, typeFiles map[types.Object]string, m methodInfo) {
 	typeFile := typeFiles[m.typeObj]
 	if m.file == typeFile {
 		return
 	}
 
-	pass.Report(analysis.Diagnostic{
+	reporter.report(analysis.Diagnostic{
 		Pos:     m.decl.Name.Pos(),
 		Message: report.MethodShouldBeInSameFile(m.typeName, m.methodName),
-	})
+	}, m.typeObj)
 }
 
-func checkSorted(pass *analysis.Pass, methods []methodInfo) {
+func checkSorted(reporter *diagnosticReporter, methods []methodInfo) {
 	groups := make(map[groupKey][]methodInfo)
 	for _, m := range methods {
 		key := groupKey{typeObj: m.typeObj, file: m.file}
@@ -158,22 +159,50 @@ func checkSorted(pass *analysis.Pass, methods []methodInfo) {
 	})
 
 	for _, key := range keys {
-		group := groups[key]
-		slices.SortFunc(group, func(a, b methodInfo) int {
-			return cmp.Compare(a.pos, b.pos)
-		})
+		checkGroupSorted(reporter, groups[key])
+	}
+}
 
-		max := ""
-		for _, m := range group {
-			if isNonEmpty(max) && isBefore(m.methodName, max) {
-				pass.Report(analysis.Diagnostic{
-					Pos:     m.decl.Name.Pos(),
-					Message: report.MethodShouldBeSorted(m.typeName, m.methodName, max),
-				})
-				continue
+func isGenericAfterRegular(generic, seenRegular bool) bool {
+	if !generic {
+		return false
+	}
+	return seenRegular
+}
+
+func checkGroupSorted(reporter *diagnosticReporter, group []methodInfo) {
+	slices.SortFunc(group, func(a, b methodInfo) int {
+		return cmp.Compare(a.pos, b.pos)
+	})
+
+	var maxGeneric, maxRegular string
+	seenRegular := false
+	for _, m := range group {
+		generic := m.decl.Type.TypeParams != nil
+		max := maxRegular
+		if generic {
+			max = maxGeneric
+		}
+		if isGenericAfterRegular(generic, seenRegular) {
+			passName := maxRegular
+			reporter.report(analysis.Diagnostic{
+				Pos:     m.decl.Name.Pos(),
+				Message: report.MethodShouldBeSorted(m.typeName, m.methodName, passName),
+			}, m.typeObj)
+		} else if isNonEmpty(max) && isBefore(m.methodName, max) {
+			reporter.report(analysis.Diagnostic{
+				Pos:     m.decl.Name.Pos(),
+				Message: report.MethodShouldBeSorted(m.typeName, m.methodName, max),
+			}, m.typeObj)
+		}
+		if generic {
+			if m.methodName > maxGeneric {
+				maxGeneric = m.methodName
 			}
-			if strings.Compare(m.methodName, max) > 0 {
-				max = m.methodName
+		} else {
+			seenRegular = true
+			if m.methodName > maxRegular {
+				maxRegular = m.methodName
 			}
 		}
 	}
@@ -197,20 +226,20 @@ func isOtherType(obj, current types.Object) bool {
 	return obj != current
 }
 
-func checkGrouped(pass *analysis.Pass, typeFiles map[types.Object]string) {
-	for _, file := range pass.Files {
-		checkFileGrouped(pass, file, typeFiles)
+func checkGrouped(reporter *diagnosticReporter, typeFiles map[types.Object]string) {
+	for _, file := range reporter.pass.Files {
+		checkFileGrouped(reporter, file, typeFiles)
 	}
 }
 
-func checkFileGrouped(pass *analysis.Pass, file *ast.File, typeFiles map[types.Object]string) {
+func checkFileGrouped(reporter *diagnosticReporter, file *ast.File, typeFiles map[types.Object]string) {
 	states := make(map[types.Object]*groupState)
 	for _, decl := range file.Decls {
 		funcDecl, ok := decl.(*ast.FuncDecl)
 		if !succeeded(ok) {
 			continue
 		}
-		typeObj, methodName := receiverType(pass, funcDecl)
+		typeObj, methodName := receiverType(reporter.pass, funcDecl)
 		if typeObj == nil {
 			interruptAllGroups(states)
 			continue
@@ -221,10 +250,10 @@ func checkFileGrouped(pass *analysis.Pass, file *ast.File, typeFiles map[types.O
 		}
 		state := states[typeObj]
 		if state != nil && isInterrupted(state) {
-			pass.Report(analysis.Diagnostic{
+			reporter.report(analysis.Diagnostic{
 				Pos:     funcDecl.Name.Pos(),
 				Message: report.MethodShouldBeGrouped(typeObj.Name(), methodName, state.lastName),
-			})
+			}, typeObj)
 		}
 		if state == nil {
 			state = &groupState{}

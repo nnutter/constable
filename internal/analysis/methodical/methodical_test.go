@@ -11,3 +11,7 @@ import (
 func TestAnalyzer(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), methodical.Analyzer, "m")
 }
+
+func TestSuggestedFixes(t *testing.T) {
+	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), methodical.Analyzer, "fix", "generic")
+}
