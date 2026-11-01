@@ -17,6 +17,7 @@ gitleaks = "latest"
 "go:github.com/kisielk/errcheck" = "latest"
 "go:go.uber.org/nilaway/cmd/nilaway" = "latest"
 "github:nnutter/mdlint" = "latest"
+"go:github.com/nnutter/testifylint" = "latest"
 "go:github.com/nnutter/timber" = "latest"
 
 [tasks.all]

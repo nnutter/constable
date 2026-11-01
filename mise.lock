@@ -139,6 +139,11 @@ version = "1.30.0"
 backend = "go:github.com/kisielk/errcheck"
 specifiers = ["latest"]
 
+[[tools."go:github.com/nnutter/testifylint"]]
+version = "0.0.0-20261101203540-577bf922d916"
+backend = "go:github.com/nnutter/testifylint"
+specifiers = ["latest"]
+
 [[tools."go:github.com/nnutter/timber"]]
 version = "0.21.0"
 backend = "go:github.com/nnutter/timber"
