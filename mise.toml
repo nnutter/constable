@@ -21,7 +21,6 @@ description = "Run fix, test, and check"
 run = [{ task = "fix" }, { task = "test" }, { task = "check" }]
 
 [tasks.ci-test]
-alias = "ci-tests"
 description = "Run tests with the race detector and shuffled order"
 run = "go test -race -shuffle=on ./..."
 
@@ -39,12 +38,10 @@ description = "Run the staged hk pre-commit hook"
 run = "hk run pre-commit"
 
 [tasks.test]
-alias = "tests"
 description = "Run tests with coverage"
 run = "go test -cover ./..."
 
 [tasks.fix]
-alias = "fixers"
 description = "Fix all files, or safely fix only the supplied files"
 usage = 'arg "[staged_files]" var=#true'
 # Only the explicit all-files hook can run module-wide writers.
@@ -57,7 +54,6 @@ fi
 '''
 
 [tasks.check]
-alias = ["linters", "static-analysis"]
 description = "Check all files without writing fixes"
 run = "hk check --all"
 
