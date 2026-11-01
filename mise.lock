@@ -212,43 +212,43 @@ url = "https://github.com/mvdan/gofumpt/releases/download/v0.12.0/gofumpt_v0.12.
 url_api = "https://api.github.com/repos/mvdan/gofumpt/releases/assets/549473475"
 
 [[tools.hk]]
-version = "2.8.0"
+version = "2.10.0"
 backend = "packslip:github.com/jdx/hk"
-specifiers = ["2.8.0"]
+specifiers = ["2.10.0"]
 
 [tools.hk."platforms.linux-arm64"]
-checksum = "sha256:d6802a66213972561f9e4aa4d3274decf3725b1fe513da762c0922274c18955b"
-url = "https://github.com/jdx/hk/releases/download/v2.8.0/hk-aarch64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:98772b6290cad5ba5fe77a203fd717c82f47bde2a9aa5b295bea22139ba4f602"
+url = "https://github.com/jdx/hk/releases/download/v2.10.0/hk-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.linux-arm64-musl"]
-checksum = "sha256:75c88574984380f3a76ab79ab89cf7d8c35d161e3b2d858ac9f13b4e936150a3"
-url = "https://github.com/jdx/hk/releases/download/v2.8.0/hk-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:bc4dd452d409ae4ed3fc58697dfbe5797c5130c0d03cb2694a2ddee3cbed89b7"
+url = "https://github.com/jdx/hk/releases/download/v2.10.0/hk-aarch64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.linux-x64"]
-checksum = "sha256:5b5d7021625d12825b3d44496b466ad65697e02651c8b9fe00117f5c25c73d0a"
-url = "https://github.com/jdx/hk/releases/download/v2.8.0/hk-x86_64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:3a1d580ba031d684307a88ce07f1751d792325f2fdace7d24dfc59b816766ad5"
+url = "https://github.com/jdx/hk/releases/download/v2.10.0/hk-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.linux-x64-musl"]
-checksum = "sha256:5a9f2e4f8ff945d19da5f4c914ec7feb3f636aa3b2eac02de2b1c6cfe76fe385"
-url = "https://github.com/jdx/hk/releases/download/v2.8.0/hk-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:bb537bcfe3d949323f4c8fefdd6011d2cff32fd2a22d6ed09ec02eb78f183e02"
+url = "https://github.com/jdx/hk/releases/download/v2.10.0/hk-x86_64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.macos-arm64"]
-checksum = "sha256:9f0290ff3cbfa9f6baff640c846bf07f78dd29e2023b0c230d3d5226c23385ca"
-url = "https://github.com/jdx/hk/releases/download/v2.8.0/hk-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:ab54862e724bd4a1ef9180ef535cfeef7f7ff98ace911bd5ea36bb41fa4ebc94"
+url = "https://github.com/jdx/hk/releases/download/v2.10.0/hk-aarch64-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.windows-x64"]
-checksum = "sha256:391d61bb4a3bb612464142277f4d934d3b1aee6068cf18175d1c2406aeda29e3"
-url = "https://github.com/jdx/hk/releases/download/v2.8.0/hk-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:0dc2485dcf4542d7be2f37890072e6bc5de664f41295449cae761e78336031d4"
+url = "https://github.com/jdx/hk/releases/download/v2.10.0/hk-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 

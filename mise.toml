@@ -1,6 +1,9 @@
+[settings]
+minimum_release_age = "0"
+
 [tools]
 go = "latest"
-hk = "2.8.0"
+hk = "2.10.0"
 pkl = "latest"
 tombi = "latest"
 yamlfmt = "latest"
