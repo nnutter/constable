@@ -12,7 +12,6 @@ require (
 	cloud.google.com/go/auth v0.24.1 // indirect
 	cloud.google.com/go/compute/metadata v0.10.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
-	github.com/Antonboom/testifylint v1.6.4 // indirect
 	github.com/BobuSumisu/aho-corasick v1.0.3 // indirect
 	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
@@ -131,7 +130,6 @@ require (
 )
 
 tool (
-	github.com/Antonboom/testifylint
 	github.com/alecthomas/go-check-sumtype/cmd/go-check-sumtype
 	github.com/kisielk/errcheck
 	github.com/nnutter/constable/cmd/constable

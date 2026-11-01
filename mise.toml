@@ -37,21 +37,16 @@ run = "go test -coverprofile=coverage.out -covermode=atomic ./... && go tool cov
 description = "Install hk git hooks"
 run = "hk install --mise"
 
-[tasks.pre-commit]
-description = "Run the staged hk pre-commit hook"
-run = "hk run pre-commit"
-
 [tasks.test]
 description = "Run tests with coverage"
 run = "go test -cover ./..."
 
 [tasks.fix]
-description = "Fix all files, or safely fix only the supplied files"
+description = "Fix all files, or only the supplied files"
 usage = 'arg "[staged_files]" var=#true'
-# Only the explicit all-files hook can run module-wide writers.
 run = '''
 if [ -z "${usage_staged_files:-}" ]; then
-  hk run fix-all --all
+  hk fix --all
 else
   hk fix ${usage_staged_files}
 fi
