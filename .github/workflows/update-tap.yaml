@@ -8,14 +8,13 @@ on:
         description: Release tag to publish to nnutter/homebrew-tap
         required: true
         type: string
-permissions:
-  contents: read
+permissions: {}
 concurrency:
   group: update-tap
   cancel-in-progress: false
 jobs:
   update-formula:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     env:
       FORMULA_NAME: constable
@@ -40,7 +39,7 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - name: Generate a token
         id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -60,8 +59,7 @@ jobs:
           FORMULA_NAME: ${{ env.FORMULA_NAME }}
           TAG: ${{ steps.release.outputs.tag }}
         run: |
-          if grep -Fq "/archive/refs/tags/${TAG}.tar.gz" "Formula/${FORMULA_NAME}.rb" ||
-             grep -Fq "/tarball/${TAG}" "Formula/${FORMULA_NAME}.rb"; then
+          if grep -Fq "/archive/refs/tags/${TAG}.tar.gz" "Formula/${FORMULA_NAME}.rb"; then
             echo "needed=false" >> "$GITHUB_OUTPUT"
             echo "Formula ${FORMULA_NAME} already uses ${TAG}."
           else
@@ -85,7 +83,6 @@ jobs:
         if: steps.needed.outputs.needed == 'true'
         env:
           FORMULA_NAME: ${{ env.FORMULA_NAME }}
-          HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
         run: bin/update-formula "$FORMULA_NAME" "$TAG"
       - name: Push the formula branch
@@ -140,6 +137,6 @@ jobs:
         run: |
           gh pr merge \
             --repo "${TAP_OWNER}/${TAP_REPOSITORY}" \
-            --merge \
             --auto \
+            --merge \
             "$BRANCH_NAME"

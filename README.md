@@ -94,20 +94,20 @@ The check also covers `for` conditions and bool assignments such as `c := a && b
 
 ## Development
 
-Run all fixers,
+Run all fixes,
 
 ```sh
-mise run fixers
+mise run fix
 ```
 
 Run all tests,
 
 ```sh
-mise run tests
+mise run test
 ```
 
-Run all linters,
+Run all checks,
 
 ```sh
-mise run linters
+mise run check
 ```
