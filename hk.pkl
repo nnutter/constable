@@ -29,6 +29,7 @@ steps {
   ["nilaway"] = Extra.nilaway
   ["pkl"] = Hk.pkl
   ["pkl_format"] = Hk.pkl_format
+  ["skills_ref"] = Extra.skills_ref
   ["staticcheck"] = Hk.staticcheck
   ["testifylint"] = Extra.testifylint
   ["tombi"] = Hk.tombi

@@ -304,6 +304,11 @@ checksum_source = "mise-versions"
 url = "https://github.com/apple/pkl/releases/download/0.32.2/pkl-windows-amd64.exe"
 url_api = "https://api.github.com/repos/apple/pkl/releases/assets/663854370"
 
+[[tools."pypi:agentskills-tools"]]
+version = "0.8.0"
+backend = "pypi:agentskills-tools"
+specifiers = ["latest"]
+
 [[tools.staticcheck]]
 version = "2026.2.2"
 backend = "aqua:dominikh/go-tools/staticcheck"
