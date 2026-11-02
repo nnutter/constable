@@ -29,7 +29,6 @@ description = "Run tests with the race detector and shuffled order"
 run = "go test -race -shuffle=on ./..."
 
 [tasks.coverage]
-alias = "cover"
 description = "Run tests and generate coverage report"
 run = "go test -coverprofile=coverage.out -covermode=atomic ./... && go tool cover -func=coverage.out"
 
