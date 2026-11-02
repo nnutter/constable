@@ -10,28 +10,28 @@ import
 exclude = List("**/testdata/**")
 
 steps {
-  ["go_imports"] = Extra.go_imports
-  ["go_fumpt"] = Hk.go_fumpt
-  ["go_fix"] = Hk.go_fix
-  ["testifylint"] = Extra.testifylint
-  ["gomod_tidy"] = Hk.gomod_tidy
-  ["go_sec"] = Extra.go_sec
-  ["go_vet"] = Hk.go_vet
-  ["go_vuln_check"] = Hk.go_vuln_check
-  ["staticcheck"] = Hk.staticcheck
   // Use a custom constable step in order to use the development version of constable.
   ["constable"] {
     check = "go run ./cmd/constable ./..."
   }
   ["errcheck"] = Hk.err_check
-  ["go_check_sumtype"] = Extra.go_check_sumtype
-  ["nilaway"] = Extra.nilaway
-  ["mdlint"] = Extra.mdlint
   ["gitleaks"] = Hk.gitleaks
-  ["pkl_format"] = Hk.pkl_format
+  ["go_check_sumtype"] = Extra.go_check_sumtype
+  ["go_fix"] = Hk.go_fix
+  ["go_fumpt"] = Hk.go_fumpt
+  ["go_imports"] = Extra.go_imports
+  ["go_sec"] = Extra.go_sec
+  ["go_vet"] = Hk.go_vet
+  ["go_vuln_check"] = Hk.go_vuln_check
+  ["gomod_tidy"] = Hk.gomod_tidy
+  ["mdlint"] = Extra.mdlint
+  ["nilaway"] = Extra.nilaway
   ["pkl"] = Hk.pkl
-  ["tombi_format"] = Hk.tombi_format
+  ["pkl_format"] = Hk.pkl_format
+  ["staticcheck"] = Hk.staticcheck
+  ["testifylint"] = Extra.testifylint
   ["tombi"] = Hk.tombi
+  ["tombi_format"] = Hk.tombi_format
   ["yamlfmt"] = Hk.yamlfmt
 }
 
