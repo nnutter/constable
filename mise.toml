@@ -20,6 +20,7 @@ pkl = "latest"
 python = "3.13"
 staticcheck = "latest"
 tombi = "latest"
+uv = "latest"
 yamlfmt = "latest"
 
 [tasks.all]
