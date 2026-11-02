@@ -8,14 +8,13 @@ on:
         description: Release tag to publish to nnutter/homebrew-tap
         required: true
         type: string
-permissions:
-  contents: read
+permissions: {}
 concurrency:
   group: update-tap
   cancel-in-progress: false
 jobs:
   update-formula:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     env:
       FORMULA_NAME: constable
@@ -60,8 +59,7 @@ jobs:
           FORMULA_NAME: ${{ env.FORMULA_NAME }}
           TAG: ${{ steps.release.outputs.tag }}
         run: |
-          if grep -Fq "/archive/refs/tags/${TAG}.tar.gz" "Formula/${FORMULA_NAME}.rb" ||
-             grep -Fq "/tarball/${TAG}" "Formula/${FORMULA_NAME}.rb"; then
+          if grep -Fq "/archive/refs/tags/${TAG}.tar.gz" "Formula/${FORMULA_NAME}.rb"; then
             echo "needed=false" >> "$GITHUB_OUTPUT"
             echo "Formula ${FORMULA_NAME} already uses ${TAG}."
           else
@@ -85,7 +83,6 @@ jobs:
         if: steps.needed.outputs.needed == 'true'
         env:
           FORMULA_NAME: ${{ env.FORMULA_NAME }}
-          HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
         run: bin/update-formula "$FORMULA_NAME" "$TAG"
       - name: Push the formula branch
