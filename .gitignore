@@ -3,3 +3,6 @@
 coverage.html
 coverage.out
 tmp/
+# mise scaffolding, except the uv lock sidecars that mise.lock never embeds.
+/.mise/*
+!/.mise/locks/
