@@ -2,6 +2,53 @@
 
 lockfile_version = 3
 
+[[tools."github:alecthomas/go-check-sumtype"]]
+version = "0.5.0"
+backend = "github:alecthomas/go-check-sumtype"
+specifiers = ["latest"]
+
+[tools."github:alecthomas/go-check-sumtype"."platforms.linux-arm64"]
+checksum = "sha256:834a7831e9a11365d719d8d9bce03812bbde126357d009bd93617f7282bdf3a6"
+checksum_source = "mise-versions"
+url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-linux-arm64.tar.gz"
+url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663818"
+
+[tools."github:alecthomas/go-check-sumtype"."platforms.linux-arm64-musl"]
+checksum = "sha256:834a7831e9a11365d719d8d9bce03812bbde126357d009bd93617f7282bdf3a6"
+checksum_source = "mise-versions"
+url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-linux-arm64.tar.gz"
+url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663818"
+
+[tools."github:alecthomas/go-check-sumtype"."platforms.linux-x64"]
+checksum = "sha256:84c803f5d242d10983d7f16136fc034d6c5aa57f70d4560ca1a7f8eae16d0aab"
+checksum_source = "mise-versions"
+url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-linux-amd64.tar.gz"
+url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663817"
+
+[tools."github:alecthomas/go-check-sumtype"."platforms.linux-x64-musl"]
+checksum = "sha256:84c803f5d242d10983d7f16136fc034d6c5aa57f70d4560ca1a7f8eae16d0aab"
+checksum_source = "mise-versions"
+url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-linux-amd64.tar.gz"
+url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663817"
+
+[tools."github:alecthomas/go-check-sumtype"."platforms.macos-arm64"]
+checksum = "sha256:013587221143de7a9809591ef31761db50ceb10cbf73f1fba4f71a3bece6969b"
+checksum_source = "mise-versions"
+url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-darwin-arm64.tar.gz"
+url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663819"
+
+[tools."github:alecthomas/go-check-sumtype"."platforms.macos-x64"]
+checksum = "sha256:c04403ebbde16a18ba132474577f7c1f1ca5fe83000d18638d2c8cca2610309c"
+checksum_source = "mise-versions"
+url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-darwin-amd64.tar.gz"
+url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663830"
+
+[tools."github:alecthomas/go-check-sumtype"."platforms.windows-x64"]
+checksum = "sha256:7bdf4bcaecadbc6ccf97d7d60dd0d164c2b4a076f27b360a8ebf9e2633384d4d"
+checksum_source = "mise-versions"
+url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-windows-amd64.tar.gz"
+url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663836"
+
 [[tools."github:nnutter/mdlint"]]
 version = "0.4.2"
 backend = "github:nnutter/mdlint"
@@ -47,6 +94,94 @@ provenance = "github-attestations"
 checksum = "sha256:e3cfe3cf4a2120d83d72515d50d3dd10a829da1449137784051813283dce8bf9"
 url = "https://github.com/nnutter/mdlint/releases/download/v0.4.2/mdlint-windows-x86_64.exe"
 url_api = "https://api.github.com/repos/nnutter/mdlint/releases/assets/683662456"
+provenance = "github-attestations"
+
+[[tools."github:nnutter/timber"]]
+version = "0.22.2"
+backend = "github:nnutter/timber"
+specifiers = ["latest"]
+
+[tools."github:nnutter/timber"."platforms.linux-arm64"]
+checksum = "sha256:1d4c8bb78e8425ed7638035c23cf94ffa3b9245a6ae0b41f5092a2e5bfb4a25f"
+url = "https://github.com/nnutter/timber/releases/download/v0.22.2/timber_v0.22.2_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/703883740"
+provenance = "github-attestations"
+
+[tools."github:nnutter/timber"."platforms.linux-arm64-musl"]
+checksum = "sha256:1d4c8bb78e8425ed7638035c23cf94ffa3b9245a6ae0b41f5092a2e5bfb4a25f"
+url = "https://github.com/nnutter/timber/releases/download/v0.22.2/timber_v0.22.2_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/703883740"
+provenance = "github-attestations"
+
+[tools."github:nnutter/timber"."platforms.linux-x64"]
+checksum = "sha256:0761d0380a82c199130a25b0e189a951626be07e16c841f001928a1d64ac7331"
+url = "https://github.com/nnutter/timber/releases/download/v0.22.2/timber_v0.22.2_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/703883735"
+provenance = "github-attestations"
+
+[tools."github:nnutter/timber"."platforms.linux-x64-musl"]
+checksum = "sha256:0761d0380a82c199130a25b0e189a951626be07e16c841f001928a1d64ac7331"
+url = "https://github.com/nnutter/timber/releases/download/v0.22.2/timber_v0.22.2_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/703883735"
+provenance = "github-attestations"
+
+[tools."github:nnutter/timber"."platforms.macos-arm64"]
+checksum = "sha256:d48859f40ed86aa55fe2e00c6003e4a7350bd999c1f050553c51fe3f4b928eef"
+url = "https://github.com/nnutter/timber/releases/download/v0.22.2/timber_v0.22.2_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/703883736"
+provenance = "github-attestations"
+
+[tools."github:nnutter/timber"."platforms.macos-x64"]
+checksum = "sha256:34338ffcf699a3384423757780215896e2bbf34be2d06a31b053698fd39852e4"
+url = "https://github.com/nnutter/timber/releases/download/v0.22.2/timber_v0.22.2_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/703883739"
+provenance = "github-attestations"
+
+[[tools."github:securego/gosec"]]
+version = "2.30.0"
+backend = "github:securego/gosec"
+specifiers = ["latest"]
+
+[tools."github:securego/gosec"."platforms.linux-arm64"]
+checksum = "sha256:0867994920453070a5d6a713e35921a3058473e5c3bf777fdd5a2d6f95313fda"
+url = "https://github.com/securego/gosec/releases/download/v2.30.0/gosec_2.30.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/securego/gosec/releases/assets/668613510"
+provenance = "github-attestations"
+
+[tools."github:securego/gosec"."platforms.linux-arm64-musl"]
+checksum = "sha256:0867994920453070a5d6a713e35921a3058473e5c3bf777fdd5a2d6f95313fda"
+url = "https://github.com/securego/gosec/releases/download/v2.30.0/gosec_2.30.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/securego/gosec/releases/assets/668613510"
+provenance = "github-attestations"
+
+[tools."github:securego/gosec"."platforms.linux-x64"]
+checksum = "sha256:3fcce2c4e802ff4169217874602a7df355e9a37bcb6ffaa34b08f3d5f336cdfb"
+url = "https://github.com/securego/gosec/releases/download/v2.30.0/gosec_2.30.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/securego/gosec/releases/assets/668613516"
+provenance = "github-attestations"
+
+[tools."github:securego/gosec"."platforms.linux-x64-musl"]
+checksum = "sha256:3fcce2c4e802ff4169217874602a7df355e9a37bcb6ffaa34b08f3d5f336cdfb"
+url = "https://github.com/securego/gosec/releases/download/v2.30.0/gosec_2.30.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/securego/gosec/releases/assets/668613516"
+provenance = "github-attestations"
+
+[tools."github:securego/gosec"."platforms.macos-arm64"]
+checksum = "sha256:cac8c480673fc179798402b6d86efc12b6bcf11c18bcf377fda02cc55846dd97"
+url = "https://github.com/securego/gosec/releases/download/v2.30.0/gosec_2.30.0_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/securego/gosec/releases/assets/668613518"
+provenance = "github-attestations"
+
+[tools."github:securego/gosec"."platforms.macos-x64"]
+checksum = "sha256:1b10b496954791f4b57448722f0cb93c0fa4aba24e9d286c0459dfde593e0898"
+url = "https://github.com/securego/gosec/releases/download/v2.30.0/gosec_2.30.0_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/securego/gosec/releases/assets/668613520"
+provenance = "github-attestations"
+
+[tools."github:securego/gosec"."platforms.windows-x64"]
+checksum = "sha256:503bdfe6155584f2497ef855846b66406bce5b574ce1a9c7a7bb171aff2caa02"
+url = "https://github.com/securego/gosec/releases/download/v2.30.0/gosec_2.30.0_windows_amd64.tar.gz"
+url_api = "https://api.github.com/repos/securego/gosec/releases/assets/668613436"
 provenance = "github-attestations"
 
 [[tools.gitleaks]]
@@ -129,11 +264,6 @@ url = "https://dl.google.com/go/go1.27.3.darwin-amd64.tar.gz"
 checksum = "sha256:f26081f438319757f8a1b46d7d0b2c5ec7583d4038e485e0aa725cfde7885fff"
 url = "https://dl.google.com/go/go1.27.3.windows-amd64.zip"
 
-[[tools."go:github.com/alecthomas/go-check-sumtype/cmd/go-check-sumtype"]]
-version = "0.5.0"
-backend = "go:github.com/alecthomas/go-check-sumtype/cmd/go-check-sumtype"
-specifiers = ["latest"]
-
 [[tools."go:github.com/kisielk/errcheck"]]
 version = "1.30.0"
 backend = "go:github.com/kisielk/errcheck"
@@ -142,16 +272,6 @@ specifiers = ["latest"]
 [[tools."go:github.com/nnutter/testifylint"]]
 version = "0.0.0-20261101203540-577bf922d916"
 backend = "go:github.com/nnutter/testifylint"
-specifiers = ["latest"]
-
-[[tools."go:github.com/nnutter/timber"]]
-version = "0.22.0"
-backend = "go:github.com/nnutter/timber"
-specifiers = ["latest"]
-
-[[tools."go:github.com/securego/gosec/v2/cmd/gosec"]]
-version = "2.30.0"
-backend = "go:github.com/securego/gosec/v2/cmd/gosec"
 specifiers = ["latest"]
 
 [[tools."go:go.uber.org/nilaway/cmd/nilaway"]]
