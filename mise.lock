@@ -433,7 +433,7 @@ uv = { path = ".mise/locks/pypi-agentskills-tools/0.8.0", digest = "sha256:ea4b8
 [[tools.python]]
 version = "3.13.18"
 backend = "core:python"
-specifiers = ["3.13"]
+specifiers = ["latest"]
 
 [tools.python."platforms.linux-arm64"]
 checksum = "sha256:578d9da1983463ffb0c8c98ab0da2f18177f44069328eb0af847860c1eb05c3e"

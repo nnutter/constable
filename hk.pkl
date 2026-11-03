@@ -45,4 +45,20 @@ hooks {
       ["change-id"] = Extra.timber_commit_msg
     }
   }
+  ["pre-commit"] {
+    fix = true
+    stage = true
+    stash = "git"
+    steps {
+      // No file filter: scan every staged change, including arbitrary types,
+      // binary files, deletions, and commits without Go or Markdown changes.
+      // The git-mode scan only sees text diffs, so staged binary bytes are
+      // checked out to a temporary directory and scanned explicitly.
+      ["gitleaks"] = (Hk.gitleaks) {
+        scan = "staged"
+        check =
+          "gitleaks git --redact --pre-commit --staged --verbose --no-banner && tmp=$(mktemp -d) || exit $?; trap 'rm -rf \"$tmp\"' EXIT INT TERM; git diff --cached --name-only -z --diff-filter=ACMRT > \"$tmp/list\" || exit $?; git checkout-index -z --stdin --prefix=\"$tmp/tree/\" < \"$tmp/list\" || exit $?; mkdir -p \"$tmp/tree\" || exit $?; gitleaks dir --redact --verbose --no-banner \"$tmp/tree\" || exit $?"
+      }
+    }
+  }
 }
