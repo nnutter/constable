@@ -1,0 +1,85 @@
+name: Release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+concurrency:
+  group: release
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os: linux
+            arch: arm64
+          - os: linux
+            arch: amd64
+          - os: darwin
+            arch: arm64
+          - os: darwin
+            arch: amd64
+    env:
+      BINARY: constable
+      TAG: ${{ github.ref_name }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install mise
+        uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
+        with:
+          version: 2026.10.25
+      - name: Build
+        env:
+          GOOS: ${{ matrix.platform.os }}
+          GOARCH: ${{ matrix.platform.arch }}
+        run: |
+          name="${BINARY}_${TAG}_${GOOS}_${GOARCH}"
+          CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${TAG}" -o "$name" ./cmd/constable
+          tar -czf "${name}.tar.gz" "$name"
+      - name: Upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ matrix.platform.os }}-${{ matrix.platform.arch }}
+          path: ${{ env.BINARY }}_${{ env.TAG }}_${{ matrix.platform.os }}_${{ matrix.platform.arch }}.tar.gz
+          if-no-files-found: error
+  publish:
+    needs: build
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - name: Download the artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Make the checksums
+        run: cd dist && sha256sum -- *.tar.gz > checksums.txt
+      - name: Read the release state
+        id: state
+        run: |
+          if state="$(gh release view "$TAG" --json isDraft --jq '.isDraft' 2>/dev/null)"; then
+            if [[ "$state" == "true" ]]; then state=draft; else state=published; fi
+          else
+            state=none
+          fi
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+      - name: Create a draft release
+        if: steps.state.outputs.state == 'none'
+        run: gh release create "$TAG" --verify-tag --draft --generate-notes --title "$TAG"
+      - name: Upload the assets
+        run: gh release upload "$TAG" dist/* --clobber
+      - name: Publish the release
+        if: steps.state.outputs.state != 'published'
+        run: gh release edit "$TAG" --draft=false --latest

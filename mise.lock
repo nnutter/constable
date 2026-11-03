@@ -145,7 +145,7 @@ backend = "go:github.com/nnutter/testifylint"
 specifiers = ["latest"]
 
 [[tools."go:github.com/nnutter/timber"]]
-version = "0.21.0"
+version = "0.22.0"
 backend = "go:github.com/nnutter/timber"
 specifiers = ["latest"]
 
