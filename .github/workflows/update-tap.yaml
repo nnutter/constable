@@ -71,7 +71,8 @@ jobs:
           FORMULA_NAME: ${{ env.FORMULA_NAME }}
           TAG: ${{ steps.release.outputs.tag }}
         run: |
-          if grep -Fq "/archive/refs/tags/${TAG}.tar.gz" "Formula/${FORMULA_NAME}.rb"; then
+          if grep -Fq "/archive/refs/tags/${TAG}.tar.gz" "Formula/${FORMULA_NAME}.rb" ||
+             grep -Fq "/releases/download/${TAG}/" "Formula/${FORMULA_NAME}.rb"; then
             echo "needed=false" >> "$GITHUB_OUTPUT"
             echo "Formula ${FORMULA_NAME} already uses ${TAG}."
           else
