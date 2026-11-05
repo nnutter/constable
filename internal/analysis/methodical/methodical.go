@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/tools/go/analysis"
 
+	"github.com/nnutter/constable/internal/generated"
 	"github.com/nnutter/constable/internal/report"
 )
 
@@ -63,6 +64,10 @@ func isNilVar(v *types.Var) bool {
 func collectTypeFiles(pass *analysis.Pass) map[types.Object]string {
 	typeFiles := make(map[types.Object]string)
 	for _, file := range pass.Files {
+		if generated.IsGenerated(file) {
+			continue
+		}
+
 		for _, decl := range file.Decls {
 			genDecl, ok := decl.(*ast.GenDecl)
 			if !ok {
@@ -102,6 +107,10 @@ type groupKey struct {
 func collectMethods(pass *analysis.Pass, typeFiles map[types.Object]string) []methodInfo {
 	var methods []methodInfo
 	for _, file := range pass.Files {
+		if generated.IsGenerated(file) {
+			continue
+		}
+
 		for _, decl := range file.Decls {
 			funcDecl, ok := decl.(*ast.FuncDecl)
 			if !succeeded(ok) || isNilRecv(funcDecl.Recv) {
@@ -233,6 +242,10 @@ func checkGrouped(reporter *diagnosticReporter, typeFiles map[types.Object]strin
 }
 
 func checkFileGrouped(reporter *diagnosticReporter, file *ast.File, typeFiles map[types.Object]string) {
+	if generated.IsGenerated(file) {
+		return
+	}
+
 	states := make(map[types.Object]*groupState)
 	for _, decl := range file.Decls {
 		funcDecl, ok := decl.(*ast.FuncDecl)
