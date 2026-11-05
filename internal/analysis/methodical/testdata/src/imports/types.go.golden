@@ -1,0 +1,10 @@
+package imports
+
+import "strings"
+
+type Widget struct{}
+
+// Alpha sorts before Trim.
+func (Widget) Alpha() {} // want "method Alpha of type Widget should be in same file"
+
+func (Widget) Trim(s string) string { return strings.TrimSpace(s) }

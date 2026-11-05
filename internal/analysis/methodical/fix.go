@@ -8,6 +8,7 @@ import (
 	"go/types"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
@@ -95,8 +96,20 @@ func (f *fixFile) moveSourceSafe() bool {
 	return f.plain() && hasNoImports(f.file)
 }
 
-func (f *fixFile) moveTargetSafe() bool {
-	return f.plain() && hasNoImports(f.file)
+func (f *fixFile) moveTargetSafe(pass *analysis.Pass, decl *ast.FuncDecl) bool {
+	if !f.plain() {
+		return false
+	}
+	if isCgoFile(f.file) {
+		return false
+	}
+	imports := fileImports(pass, f.file)
+	for _, ref := range declImports(pass, decl) {
+		if !hasImport(imports, ref) {
+			return false
+		}
+	}
+	return true
 }
 
 // A cross-file move must not cross build constraints or position directives,
@@ -108,6 +121,106 @@ func (f *fixFile) plain() bool {
 		return false
 	}
 	return !containsDirective(f.source) && !bytes.Contains(f.source, []byte("// +build"))
+}
+
+// importRef names an import the way the code it serves names it.
+type importRef struct {
+	name string
+	path string
+}
+
+// declImports lists the imports that a declaration needs to compile in a
+// different file. A qualified identifier needs the name that qualifies it, and
+// a bare identifier from another package needs a dot import.
+func declImports(pass *analysis.Pass, decl *ast.FuncDecl) []importRef {
+	var refs []importRef
+	selectors := make(map[*ast.Ident]bool)
+	seen := make(map[importRef]bool)
+	ast.Inspect(decl, func(node ast.Node) bool {
+		if sel, ok := node.(*ast.SelectorExpr); ok {
+			selectors[sel.Sel] = true
+		}
+		id, ok := node.(*ast.Ident)
+		if !ok {
+			return true
+		}
+		if selectors[id] {
+			return true
+		}
+		ref, ok := identImport(pass, id)
+		if !ok {
+			return true
+		}
+		if seen[ref] {
+			return true
+		}
+		seen[ref] = true
+		refs = append(refs, ref)
+		return true
+	})
+	return refs
+}
+
+func identImport(pass *analysis.Pass, id *ast.Ident) (importRef, bool) {
+	obj := pass.TypesInfo.Uses[id]
+	if pkgName, ok := obj.(*types.PkgName); ok {
+		return importRef{name: pkgName.Name(), path: pkgName.Imported().Path()}, true
+	}
+	// A bare, unqualified identifier with an object from another package comes
+	// from a dot import.
+	if obj == nil {
+		return importRef{}, false
+	}
+	pkg := obj.Pkg()
+	if pkg == nil {
+		return importRef{}, false
+	}
+	if pkg == pass.Pkg {
+		return importRef{}, false
+	}
+	return importRef{name: ".", path: pkg.Path()}, true
+}
+
+// fileImports maps each name that the file imports to the path it names.
+func fileImports(pass *analysis.Pass, file *ast.File) map[string]string {
+	imports := make(map[string]string)
+	for _, spec := range file.Imports {
+		pkgName := importPkgName(pass, spec)
+		if pkgName == nil {
+			continue
+		}
+		imports[pkgName.Name()] = pkgName.Imported().Path()
+	}
+	return imports
+}
+
+func importPkgName(pass *analysis.Pass, spec *ast.ImportSpec) *types.PkgName {
+	if spec.Name != nil {
+		if pkgName, ok := pass.TypesInfo.Defs[spec.Name].(*types.PkgName); ok {
+			return pkgName
+		}
+		return nil
+	}
+	if pkgName, ok := pass.TypesInfo.Implicits[spec].(*types.PkgName); ok {
+		return pkgName
+	}
+	return nil
+}
+
+func hasImport(imports map[string]string, ref importRef) bool {
+	return imports[ref.name] == ref.path
+}
+
+func isCgoFile(file *ast.File) bool {
+	return slices.ContainsFunc(file.Imports, isCgoImport)
+}
+
+func isCgoImport(spec *ast.ImportSpec) bool {
+	path, err := strconv.Unquote(spec.Path.Value)
+	if err != nil {
+		return false
+	}
+	return path == "C"
 }
 
 func hasNoImports(file *ast.File) bool {
@@ -181,7 +294,7 @@ func fixMethodFor(pass *analysis.Pass, m methodInfo, srcFile *fixFile, target fi
 		if !srcFile.moveSourceSafe() {
 			return fixMethod{}, false
 		}
-		if !target.file.moveTargetSafe() {
+		if !target.file.moveTargetSafe(pass, m.decl) {
 			return fixMethod{}, false
 		}
 	}
