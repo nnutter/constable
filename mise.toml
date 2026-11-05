@@ -1,7 +1,17 @@
 [settings]
 minimum_release_age = "0"
 
+[env]
+# conda:git below exports CONDA_PREFIX to every child process, and a Python
+# tool then looks for site-packages inside the Git package. This repository has
+# no conda environment, so remove the variable.
+CONDA_PREFIX = false
+
 [tools]
+# Git 2.54 and later lets hk install config-based hooks instead of script
+# shims, so the hook mechanism does not depend on the host Git. The package is
+# about 260 MB and every repository on the machine shares it.
+"conda:git" = "latest"
 jactionlint = "latest"
 "github:alecthomas/go-check-sumtype" = "latest"
 "github:nnutter/mdlint" = "latest"
