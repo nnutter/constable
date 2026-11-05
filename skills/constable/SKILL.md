@@ -11,10 +11,9 @@ Use it to check a change, and to hold a repository rule in a hook or in CI.
 
 ## Run it
 
-Install the released command, then run it from the module root,
+Run it from the module root,
 
 ```sh
-go install github.com/nnutter/constable/cmd/constable@latest
 constable ./...
 ```
 
