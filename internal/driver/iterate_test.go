@@ -20,9 +20,16 @@ import (
 
 func fixRepo(t *testing.T, source string) string {
 	t.Helper()
+	return fixRepoFiles(t, map[string]string{"fix.go": source})
+}
+
+func fixRepoFiles(t *testing.T, files map[string]string) string {
+	t.Helper()
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/fix\n\ngo 1.25\n"), 0o644))
-	require.NoError(t, os.WriteFile(filepath.Join(dir, "fix.go"), []byte(source), 0o644))
+	for name, source := range files {
+		require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(source), 0o644))
+	}
 	gitCommand(t, dir, "", "init", "-q")
 	gitCommand(t, dir, "", "add", ".")
 	gitCommand(t, dir, "", "-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-qm", "initial")
@@ -107,6 +114,37 @@ func TestMethodicalCumulativeFix(t *testing.T) {
 		again, err := os.ReadFile("fix.go")
 		require.NoError(t, err)
 		require.Equal(t, applied, again)
+	}
+}
+
+func TestMethodicalCrossFileFix(t *testing.T) {
+	types := "package fix\n\nimport (\n\t\"strings\"\n)\n\ntype Widget struct{}\n\nfunc (Widget) Trim(s string) string { return strings.TrimSpace(s) }\n\nvar Widgets = 0\n"
+	methods := "package fix\n\nimport \"fmt\"\n\ntype Gadget struct{}\n\nfunc (Gadget) Show(s string) { fmt.Print(s) }\n\nfunc (Widget) Alpha(s string) { fmt.Print(s) }\n\nvar Gadgets = 0\n"
+	fixRepoFiles(t, map[string]string{"types.go": types, "methods.go": methods})
+	code, output, diagnostics := runFix(t, methodical.Analyzer, false)
+	require.Equal(t, 0, code)
+	require.Empty(t, output)
+	require.Empty(t, diagnostics)
+
+	wantTypes := "package fix\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n\ntype Widget struct{}\n\nfunc (Widget) Alpha(s string) { fmt.Print(s) }\n\nfunc (Widget) Trim(s string) string { return strings.TrimSpace(s) }\n\nvar Widgets = 0\n"
+	wantMethods := "package fix\n\nimport \"fmt\"\n\ntype Gadget struct{}\n\nfunc (Gadget) Show(s string) { fmt.Print(s) }\n\nvar Gadgets = 0\n"
+	for name, want := range map[string]string{"types.go": wantTypes, "methods.go": wantMethods} {
+		data, err := os.ReadFile(name)
+		require.NoError(t, err)
+		formatted, err := format.Source(data)
+		require.NoError(t, err)
+		require.Equal(t, string(formatted), string(data), "%s is not formatted", name)
+		require.Equal(t, want, string(data), "%s", name)
+	}
+
+	code, output, diagnostics = runFix(t, methodical.Analyzer, false)
+	require.Equal(t, 0, code)
+	require.Empty(t, output)
+	require.Empty(t, diagnostics)
+	for name, want := range map[string]string{"types.go": wantTypes, "methods.go": wantMethods} {
+		data, err := os.ReadFile(name)
+		require.NoError(t, err)
+		require.Equal(t, want, string(data), "%s changed on a second run", name)
 	}
 }
 

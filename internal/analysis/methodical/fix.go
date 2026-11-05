@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"maps"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -55,8 +56,8 @@ type fixMethod struct {
 // Offer at most one receiver fix per analysis to prevent overlapping edits.
 func suggestedFix(pass *analysis.Pass, methods []methodInfo, receiver types.Object) *analysis.SuggestedFix {
 	files, typesByObject := collectFixFiles(pass)
-	candidates, unsafe := collectFixMethods(pass, methods, receiver, files, typesByObject)
-	return makeSuggestedFix(candidates, unsafe)
+	candidates, imports, unsafe := collectFixMethods(pass, methods, receiver, files, typesByObject)
+	return makeSuggestedFix(candidates, imports, unsafe)
 }
 
 func collectFixFiles(pass *analysis.Pass) (map[string]*fixFile, map[types.Object]fixType) {
@@ -108,20 +109,13 @@ func (f *fixFile) moveSourceSafe(pass *analysis.Pass, moved []*ast.FuncDecl) boo
 	return true
 }
 
-func (f *fixFile) moveTargetSafe(pass *analysis.Pass, decl *ast.FuncDecl) bool {
+// A target file only gains declarations, so it must be one that the move may
+// write to at all.
+func (f *fixFile) moveTargetSafe() bool {
 	if !f.plain() {
 		return false
 	}
-	if isCgoFile(f.file) {
-		return false
-	}
-	imports := fileImports(pass, f.file)
-	for _, ref := range declImports(pass, decl) {
-		if !hasImport(imports, ref) {
-			return false
-		}
-	}
-	return true
+	return !isCgoFile(f.file)
 }
 
 // A cross-file move must not cross build constraints or position directives,
@@ -319,7 +313,7 @@ func safeLineSuffix(suffix []byte) bool {
 	return rest == "" || strings.HasPrefix(rest, "//")
 }
 
-func collectFixMethods(pass *analysis.Pass, methods []methodInfo, receiver types.Object, files map[string]*fixFile, typesByObject map[types.Object]fixType) ([]fixMethod, map[types.Object]bool) {
+func collectFixMethods(pass *analysis.Pass, methods []methodInfo, receiver types.Object, files map[string]*fixFile, typesByObject map[types.Object]fixType) ([]fixMethod, []analysis.TextEdit, map[types.Object]bool) {
 	var candidates []fixMethod
 	unsafe := make(map[types.Object]bool)
 	moved := make(map[*fixFile][]*ast.FuncDecl)
@@ -344,7 +338,302 @@ func collectFixMethods(pass *analysis.Pass, methods []methodInfo, receiver types
 			unsafe[receiver] = true
 		}
 	}
-	return candidates, unsafe
+	imports, ok := collectImportEdits(pass, candidates)
+	if !ok {
+		unsafe[receiver] = true
+	}
+	return candidates, imports, unsafe
+}
+
+// collectImportEdits adds the imports that the moved declarations need and the
+// target files lack. It reports false when an import cannot be added safely.
+func collectImportEdits(pass *analysis.Pass, candidates []fixMethod) ([]analysis.TextEdit, bool) {
+	needed := make(map[*fixFile][]importRef)
+	for _, m := range candidates {
+		if m.file == m.target.file {
+			continue
+		}
+		needed[m.target.file] = append(needed[m.target.file], declImports(pass, m.method.decl)...)
+	}
+	var edits []analysis.TextEdit
+	for file, refs := range needed {
+		fileEdits, ok := fileImportEdits(pass, file, refs)
+		if !ok {
+			return nil, false
+		}
+		edits = append(edits, fileEdits...)
+	}
+	return edits, true
+}
+
+func fileImportEdits(pass *analysis.Pass, file *fixFile, refs []importRef) ([]analysis.TextEdit, bool) {
+	missing := missingImports(pass, file, refs)
+	if len(missing) == 0 {
+		return nil, true
+	}
+	if !canAddImports(pass, file, missing) {
+		return nil, false
+	}
+	return addImportEdits(pass, file, missing), true
+}
+
+func missingImports(pass *analysis.Pass, file *fixFile, refs []importRef) []importRef {
+	have := fileImports(pass, file.file)
+	missing := make(map[importRef]bool)
+	for _, ref := range refs {
+		if hasImport(have, ref) {
+			continue
+		}
+		missing[ref] = true
+	}
+	return slices.SortedFunc(maps.Keys(missing), compareImportRefs)
+}
+
+func compareImportRefs(a, b importRef) int {
+	return cmp.Or(strings.Compare(a.path, b.path), strings.Compare(a.name, b.name))
+}
+
+// canAddImports reports whether the imports can join the file without changing
+// what the names in that file mean. A name that the file already binds cannot
+// name a second package, and a comment inside the import block would lose the
+// import that it describes.
+func canAddImports(pass *analysis.Pass, file *fixFile, missing []importRef) bool {
+	have := fileImports(pass, file.file)
+	for _, ref := range missing {
+		if isNameTaken(have, ref.name) {
+			return false
+		}
+	}
+	block := importBlock(file.file)
+	if block == nil {
+		return true
+	}
+	return !hasCommentsIn(file, block)
+}
+
+// isNameTaken reports whether the file already binds the name to another
+// package. Go forbids one name from naming both an import and a package-level
+// declaration, so a name that the moved code already uses cannot clash with a
+// package declaration, and only the names in the file need the check.
+func isNameTaken(have map[string]string, name string) bool {
+	_, ok := have[name]
+	return ok
+}
+
+func importBlock(file *ast.File) *ast.GenDecl {
+	for _, decl := range file.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+		if gen.Tok != token.IMPORT {
+			continue
+		}
+		if gen.Lparen.IsValid() {
+			return gen
+		}
+	}
+	return nil
+}
+
+func hasCommentsIn(file *fixFile, node ast.Node) bool {
+	for _, comment := range file.file.Comments {
+		if comment.Pos() < node.Pos() {
+			continue
+		}
+		if comment.End() > node.End() {
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+func addImportEdits(pass *analysis.Pass, file *fixFile, missing []importRef) []analysis.TextEdit {
+	block := importBlock(file.file)
+	if block != nil {
+		return blockImportEdits(pass, file, block, missing)
+	}
+	lines := standaloneImportLines(file)
+	if len(lines) != 0 {
+		return standaloneImportEdits(pass, file, lines, missing)
+	}
+	anchor := endOfLine(file.source, file.token.Offset(file.file.Name.End()))
+	pos := file.token.Pos(anchor)
+	return []analysis.TextEdit{{Pos: pos, End: pos, NewText: newImportDecl(pass, missing)}}
+}
+
+// newImportDecl writes imports for a file that has none, with the blank lines
+// that separate a standalone declaration from the code around it.
+func newImportDecl(pass *analysis.Pass, missing []importRef) []byte {
+	if len(missing) == 1 {
+		return []byte("\n\nimport " + importSpecText(pass, missing[0]))
+	}
+	var decl bytes.Buffer
+	decl.WriteString("\n\nimport (\n")
+	for _, ref := range missing {
+		decl.WriteString("\t" + importSpecText(pass, ref) + "\n")
+	}
+	decl.WriteString(")")
+	return decl.Bytes()
+}
+
+func standaloneImportLines(file *fixFile) []importLine {
+	var lines []importLine
+	for _, decl := range file.file.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+		if gen.Tok != token.IMPORT {
+			continue
+		}
+		if gen.Lparen.IsValid() {
+			continue
+		}
+		for _, spec := range gen.Specs {
+			importSpec, ok := spec.(*ast.ImportSpec)
+			if !ok {
+				continue
+			}
+			lines = append(lines, importLine{spec: importSpec, path: importPath(importSpec)})
+		}
+	}
+	return lines
+}
+
+// standaloneImportEdits keeps the imports of a file that spells each one as its
+// own declaration together, instead of starting a second group of them.
+func standaloneImportEdits(pass *analysis.Pass, file *fixFile, lines []importLine, missing []importRef) []analysis.TextEdit {
+	after := make(map[int][]string)
+	first := make(map[int][]string)
+	for _, ref := range missing {
+		line, ok := importNeighbour(lines, ref.path)
+		if !ok {
+			anchor := lineStart(file.source, file.token.Offset(lines[0].spec.Pos()))
+			first[anchor] = append(first[anchor], "import "+importSpecText(pass, ref))
+			continue
+		}
+		anchor := endOfLine(file.source, file.token.Offset(line.spec.End()))
+		after[anchor] = append(after[anchor], "\nimport "+importSpecText(pass, ref))
+	}
+	return joinImportEdits(file, after, first)
+}
+
+// importSpecText writes one import spec the way the moved code names it.
+func importSpecText(pass *analysis.Pass, ref importRef) string {
+	quoted := strconv.Quote(ref.path)
+	if ref.name == "." {
+		return ". " + quoted
+	}
+	if ref.name == importedName(pass, ref.path) {
+		return quoted
+	}
+	return ref.name + " " + quoted
+}
+
+func importedName(pass *analysis.Pass, path string) string {
+	for _, pkg := range pass.Pkg.Imports() {
+		if pkg.Path() == path {
+			return pkg.Name()
+		}
+	}
+	return ""
+}
+
+type importLine struct {
+	spec *ast.ImportSpec
+	path string
+}
+
+// blockImportEdits places each missing import right after the import that
+// sorts before it, which is where gofmt leaves it. An import that sorts first
+// joins the line of the import that follows it.
+func blockImportEdits(pass *analysis.Pass, file *fixFile, block *ast.GenDecl, missing []importRef) []analysis.TextEdit {
+	lines := blockImportLines(file, block)
+	indent := specIndent(file, lines)
+	after := make(map[int][]string)
+	first := make(map[int][]string)
+	for _, ref := range missing {
+		line, ok := importNeighbour(lines, ref.path)
+		if !ok {
+			anchor := firstLineStart(file, block)
+			first[anchor] = append(first[anchor], indent+importSpecText(pass, ref))
+			continue
+		}
+		anchor := endOfLine(file.source, file.token.Offset(line.spec.End()))
+		after[anchor] = append(after[anchor], "\n"+indent+importSpecText(pass, ref))
+	}
+	return joinImportEdits(file, after, first)
+}
+
+func joinImportEdits(file *fixFile, after, first map[int][]string) []analysis.TextEdit {
+	var edits []analysis.TextEdit
+	for anchor, specs := range after {
+		pos := file.token.Pos(anchor)
+		edits = append(edits, analysis.TextEdit{Pos: pos, End: pos, NewText: []byte(strings.Join(specs, ""))})
+	}
+	for anchor, specs := range first {
+		pos := file.token.Pos(anchor)
+		edits = append(edits, analysis.TextEdit{Pos: pos, End: pos, NewText: []byte(strings.Join(specs, "\n") + "\n")})
+	}
+	return edits
+}
+
+func blockImportLines(file *fixFile, block *ast.GenDecl) []importLine {
+	lines := make([]importLine, 0, len(block.Specs))
+	for _, spec := range block.Specs {
+		importSpec, ok := spec.(*ast.ImportSpec)
+		if !ok {
+			continue
+		}
+		lines = append(lines, importLine{spec: importSpec, path: importPath(importSpec)})
+	}
+	return lines
+}
+
+func importPath(spec *ast.ImportSpec) string {
+	path, err := strconv.Unquote(spec.Path.Value)
+	if err != nil {
+		return spec.Path.Value
+	}
+	return path
+}
+
+// importNeighbour finds the import that a new path follows in sort order.
+func importNeighbour(lines []importLine, path string) (importLine, bool) {
+	var neighbour importLine
+	found := false
+	for _, line := range lines {
+		if !isBefore(line.path, path) {
+			continue
+		}
+		if found && !isBefore(neighbour.path, line.path) {
+			continue
+		}
+		neighbour, found = line, true
+	}
+	return neighbour, found
+}
+
+func firstLineStart(file *fixFile, block *ast.GenDecl) int {
+	if len(block.Specs) == 0 {
+		return endOfLine(file.source, file.token.Offset(block.Lparen))
+	}
+	return lineStart(file.source, file.token.Offset(block.Specs[0].Pos()))
+}
+
+func lineStart(src []byte, offset int) int {
+	start := bytes.LastIndexByte(src[:offset], '\n')
+	return start + 1
+}
+
+func specIndent(file *fixFile, lines []importLine) string {
+	if len(lines) == 0 {
+		return "\t"
+	}
+	pos := file.token.Offset(lines[0].spec.Pos())
+	return string(file.source[lineStart(file.source, pos):pos])
 }
 
 func fixMethodFor(pass *analysis.Pass, m methodInfo, srcFile *fixFile, target fixType) (fixMethod, bool) {
@@ -355,7 +644,7 @@ func fixMethodFor(pass *analysis.Pass, m methodInfo, srcFile *fixFile, target fi
 		return fixMethod{}, false
 	}
 	if srcFile != target.file {
-		if !target.file.moveTargetSafe(pass, m.decl) {
+		if !target.file.moveTargetSafe() {
 			return fixMethod{}, false
 		}
 	}
@@ -397,7 +686,7 @@ func afterBlankLines(src []byte, lineEnd int) int {
 	return end
 }
 
-func makeSuggestedFix(candidates []fixMethod, unsafe map[types.Object]bool) *analysis.SuggestedFix {
+func makeSuggestedFix(candidates []fixMethod, imports []analysis.TextEdit, unsafe map[types.Object]bool) *analysis.SuggestedFix {
 	groups := make(map[token.Pos][]fixMethod)
 	for _, m := range candidates {
 		if !unsafe[m.method.typeObj] {
@@ -421,6 +710,7 @@ func makeSuggestedFix(candidates []fixMethod, unsafe map[types.Object]bool) *ana
 	if len(edits) == 0 {
 		return nil
 	}
+	edits = append(edits, imports...)
 	return &analysis.SuggestedFix{Message: "Move and order methods after their types", TextEdits: edits}
 }
 
