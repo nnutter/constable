@@ -152,4 +152,7 @@ It does not by itself guarantee that a function has no I/O, global state changes
 Calls to helper functions, interface methods, function values, and other indirect mutation paths may not be modeled.
 The analyzer currently recognizes only the `nonmutating` directive.
 
+The analyzers skip files that carry the standard generated-code comment, `// Code generated ... DO NOT EDIT.`.
+Edit such a file through its generator, not by hand.
+
 When behavior is uncertain, inspect the diagnostic and the implementation rather than assuming that a clean run proves complete immutability.

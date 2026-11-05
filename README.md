@@ -21,6 +21,9 @@ Run `constable` on your Go packages,
 constable ./...
 ```
 
+constable skips files that carry the standard generated-code comment, `// Code generated ... DO NOT EDIT.`.
+A diagnostic in such a file is not actionable because the next run of the generator overwrites the file.
+
 ## Example
 
 This function is reported because it mutates through a pointer parameter,
