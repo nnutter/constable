@@ -124,9 +124,9 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 		enable := new(triState)
 		flag.Var(enable, a.Name, fmt.Sprintf("enable %q analysis", a.Name))
 		enabled[a] = enable
-
-		registerAnalyzerFlags(flag.CommandLine, a)
 	}
+
+	registerFlags(flag.CommandLine, analyzers)
 
 	printFlags := flag.Bool("flags", false, "print analyzer flags in JSON")
 	var showVersion versionValue
@@ -169,15 +169,36 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 	os.Exit(Run(args, analyzers, opts))
 }
 
-// registerAnalyzerFlags registers the flags of a under the "<analyzer>.<flag>"
-// names, so that two analyzers can each hold a flag with the same name.
-func registerAnalyzerFlags(fs *flag.FlagSet, a *analysis.Analyzer) {
+// registerFlags registers the flags of each analyzer in the requirement graph
+// of analyzers under the "<analyzer>.<flag>" names. A required analyzer
+// carries configuration that its dependents read, so the flags of a required
+// analyzer must reach the command line even though only the roots have an
+// enable flag.
+func registerFlags(fs *flag.FlagSet, analyzers []*analysis.Analyzer) {
+	seen := make(map[*analysis.Analyzer]bool)
+	for _, a := range analyzers {
+		registerAnalyzerFlags(fs, a, seen)
+	}
+}
+
+// registerAnalyzerFlags registers the flags of a and of the analyzers it
+// requires.
+func registerAnalyzerFlags(fs *flag.FlagSet, a *analysis.Analyzer, seen map[*analysis.Analyzer]bool) {
+	if seen[a] {
+		return
+	}
+	seen[a] = true
+
 	a.Flags.VisitAll(func(f *flag.Flag) {
 		name := a.Name + "." + f.Name
 		if fs.Lookup(name) == nil {
 			fs.Var(f.Value, name, f.Usage)
 		}
 	})
+
+	for _, req := range a.Requires {
+		registerAnalyzerFlags(fs, req, seen)
+	}
 }
 
 func succeeded(ok bool) bool {
@@ -395,14 +416,29 @@ func writeHelp(progname string, analyzers []*analysis.Analyzer, args []string) {
 	for _, a := range analyzers {
 		if a.Name == args[0] {
 			_, _ = fmt.Fprintf(os.Stdout, "%s: %s\n", a.Name, a.Doc)
-			a.Flags.VisitAll(func(f *flag.Flag) {
-				_, _ = fmt.Fprintf(os.Stdout, "-%s.%s: %s\n", a.Name, f.Name, f.Usage)
-			})
+			writeAnalyzerFlags(a, make(map[*analysis.Analyzer]bool))
 			return
 		}
 	}
 	fmt.Fprintf(os.Stderr, "unknown analyzer %q\n", args[0])
 	os.Exit(1)
+}
+
+// writeAnalyzerFlags writes the flags of a and of the analyzers it requires,
+// because a required analyzer carries configuration that a reads.
+func writeAnalyzerFlags(a *analysis.Analyzer, seen map[*analysis.Analyzer]bool) {
+	if seen[a] {
+		return
+	}
+	seen[a] = true
+
+	a.Flags.VisitAll(func(f *flag.Flag) {
+		_, _ = fmt.Fprintf(os.Stdout, "-%s.%s: %s\n", a.Name, f.Name, f.Usage)
+	})
+
+	for _, req := range a.Requires {
+		writeAnalyzerFlags(req, seen)
+	}
 }
 
 // Run loads the packages and applies the analyzers, printing
