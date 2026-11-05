@@ -2,13 +2,14 @@ name: Release
 on:
   push:
     tags: ["v*"]
-permissions:
-  contents: write
+permissions: {}
 concurrency:
   group: release
   cancel-in-progress: false
 jobs:
   build:
+    permissions:
+      contents: read
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     strategy:
@@ -36,6 +37,8 @@ jobs:
         uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
         with:
           version: 2026.10.25
+          # A cache from a pull request could reach the published artifacts.
+          cache: false
       - name: Build
         env:
           GOOS: ${{ matrix.platform.os }}
@@ -52,6 +55,8 @@ jobs:
           if-no-files-found: error
   publish:
     needs: build
+    permissions:
+      contents: write
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     env:
