@@ -119,9 +119,16 @@ cyclomatic complexity 12 exceeds limit 10 (function Busy)
 ```
 
 Extract branches into smaller functions until the count is at or below the limit.
+Extract a branch when you can give the new function a name from the problem domain, such as `isOverdue` or `hasOpenInvoice`.
+That name states the fact that the condition tests, so the reader sees the rule instead of the steps.
+A name that only restates the steps, such as `checkFlagsAndReturnTwo`, does not help the reader.
+When only that kind of name fits, the branch is not a good candidate for extraction.
+Split the function somewhere else.
+When the function is one coherent rule, raise the limit instead.
 The count starts at 1 and adds 1 for each `if`, `for`, `range`, `case`, and `select` clause, `&&`, and `||`.
 A closure adds to the function that holds it, and a `default` clause counts.
-Raise the limit with `-complexity.limit=15` only when the function must keep its shape, and say why in the change.
+`-complexity.limit=15` raises the limit for the whole run.
+Say why in the change when you use it.
 
 ### errcheck, sumtype, testifylint, and nilaway
 
