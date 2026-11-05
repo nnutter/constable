@@ -1,7 +1,6 @@
 package nonmutating
 
 import (
-	"fmt"
 	"go/ast"
 	"go/types"
 
@@ -166,21 +165,6 @@ func (state *functionState) collectAssignAliases(stmt *ast.AssignStmt) bool {
 	return changed
 }
 
-func (state *functionState) containerStorageVisible(expr ast.Expr) (origin, bool) {
-	expr = unparen(expr)
-	switch expr := expr.(type) {
-	case *ast.Ident:
-		origin, ok := state.originOf(expr)
-		if !ok {
-			return origin, false
-		}
-
-		return origin, isReferenceLike(state.typeOf(expr))
-	default:
-		panic("unexpected expr type: " + fmt.Sprintf("%T", expr))
-	}
-}
-
 func (state *functionState) exprRefersToCallerVisibleMemory(expr ast.Expr) (origin, bool) {
 	expr = unparen(expr)
 	switch expr := expr.(type) {
@@ -192,18 +176,18 @@ func (state *functionState) exprRefersToCallerVisibleMemory(expr ast.Expr) (orig
 
 		return origin, isReferenceLike(state.typeOf(expr))
 	case *ast.SelectorExpr:
-		origin, ok := state.originOf(expr.X)
+		if origin, ok := state.exprRefersToCallerVisibleMemory(expr.X); ok {
+			return origin, true
+		}
+
+		origin, ok := state.rootOrigin(expr.X)
 		if !ok {
 			return origin, false
 		}
 
-		if _, ok := state.containerStorageVisible(expr.X); ok {
-			return origin, true
-		}
-
 		return origin, isReferenceLike(state.typeOf(expr))
 	case *ast.IndexExpr:
-		origin, ok := state.originOf(expr.X)
+		origin, ok := state.rootOrigin(expr.X)
 		if !ok {
 			return origin, false
 		}
@@ -296,6 +280,26 @@ func (state *functionState) reportMutations(body *ast.BlockStmt) {
 	})
 }
 
+// rootOrigin returns the parameter or receiver that an expression starts at.
+// The analyzer holds an origin for each identifier, so a chain that starts
+// below an identifier, such as an element of a slice parameter, reports the
+// identifier that the chain starts at.
+func (state *functionState) rootOrigin(expr ast.Expr) (origin, bool) {
+	expr = unparen(expr)
+	switch expr := expr.(type) {
+	case *ast.Ident:
+		return state.originOf(expr)
+	case *ast.StarExpr:
+		return state.rootOrigin(expr.X)
+	case *ast.SelectorExpr:
+		return state.rootOrigin(expr.X)
+	case *ast.IndexExpr:
+		return state.rootOrigin(expr.X)
+	}
+
+	return origin{}, false
+}
+
 func (state *functionState) typeOf(expr ast.Expr) types.Type {
 	return state.pass.TypesInfo.TypeOf(expr)
 }
@@ -308,7 +312,7 @@ func (state *functionState) visibleMutationOrigin(expr ast.Expr) (origin, bool) 
 	case *ast.StarExpr:
 		return state.exprRefersToCallerVisibleMemory(expr.X)
 	case *ast.SelectorExpr:
-		return state.containerStorageVisible(expr.X)
+		return state.exprRefersToCallerVisibleMemory(expr.X)
 	case *ast.IndexExpr:
 		return state.exprRefersToCallerVisibleMemory(expr.X)
 	}
