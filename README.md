@@ -120,6 +120,39 @@ A move is conservative, because the analyzer must be sure that the result compil
 A fix writes only files that Git tracks and that have no changes, so `git checkout` recovers a fix that went wrong.
 Diagnostics that remain after the fixes are printed, and the command exits unsuccessfully.
 
+## Embedded analyzers
+
+constable runs four analyzers from other modules: `errcheck`, `sumtype`, `testifylint`, and `nilaway`.
+Each keeps its upstream name, so its flags keep the upstream prefix, such as `-errcheck.blank`, `-sumtype.include-shared-interfaces`, and `-testifylint.disable-all`.
+Run `constable -flags` for the complete list.
+Each embedded analyzer skips files that carry the generated-code comment, the same as the constable analyzers.
+
+### errcheck
+
+Reports an error that the code discards.
+
+### sumtype
+
+Reports a type switch over a sum type that omits a variant.
+Mark the interface with `//sumtype:decl` and the switch must cover every variant.
+
+### testifylint
+
+Reports a test that misuses testify.
+
+### nilaway
+
+Reports a nil value that flows to a dereference.
+NilAway reads every dependency by default, which costs seconds and gigabytes.
+Give it the module of the code that constable analyzes:
+
+```sh
+constable -nilaway_config.include-pkgs=$(go list -m) ./...
+```
+
+The `nilaway_config` prefix is the name of the analyzer that holds the configuration, not the name of the analyzer that reports the diagnostic.
+The driver registers the flags of a required analyzer, so this flag reaches the analyzer that reads it.
+
 ## Development
 
 Run all fixes,
