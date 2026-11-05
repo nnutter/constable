@@ -22,7 +22,7 @@ func parse(t *testing.T, src string) *ast.File {
 	return file
 }
 
-func TestIsGenerated(t *testing.T) {
+func TestSkipped(t *testing.T) {
 	tests := []struct {
 		name string
 		src  string
@@ -62,7 +62,7 @@ func TestIsGenerated(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.want, generated.IsGenerated(parse(t, test.src)))
+			assert.Equal(t, test.want, generated.Skipped(parse(t, test.src)))
 		})
 	}
 }

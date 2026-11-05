@@ -85,7 +85,7 @@ func readFixFile(pass *analysis.Pass, file *ast.File) *fixFile {
 		return nil
 	}
 	src, err := pass.ReadFile(tf.Name())
-	if err != nil || generated.IsGenerated(file) || hasStandaloneComments(pass.Fset, file) {
+	if err != nil || generated.Skipped(file) || hasStandaloneComments(pass.Fset, file) {
 		return nil
 	}
 	return &fixFile{file: file, token: tf, source: src}

@@ -4,12 +4,12 @@ package generated
 
 import "go/ast"
 
-// IsGenerated reports whether file carries the standard generated-code
-// comment, "// Code generated <tool> DO NOT EDIT.".
+// Skipped reports whether analyzers omit the diagnostics of file.
 //
-// Analyzers skip generated files. A diagnostic there is not actionable
-// because the next run of the generating tool overwrites the file. The check
-// is the Go convention, so an author controls it with the comment alone.
-func IsGenerated(file *ast.File) bool {
+// A diagnostic in a generated file is not actionable because the next run of
+// the generating tool overwrites the file. The mark is the Go convention,
+// "// Code generated <tool> DO NOT EDIT.", so an author controls it with the
+// comment alone.
+func Skipped(file *ast.File) bool {
 	return ast.IsGenerated(file)
 }

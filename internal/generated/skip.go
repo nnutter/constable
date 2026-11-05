@@ -38,7 +38,7 @@ func Skip(a *analysis.Analyzer) *analysis.Analyzer {
 func generatedFiles(pass *analysis.Pass, files []*ast.File) map[string]bool {
 	var names map[string]bool
 	for _, file := range files {
-		if !IsGenerated(file) {
+		if !Skipped(file) {
 			continue
 		}
 		if names == nil {

@@ -64,7 +64,7 @@ func isNilVar(v *types.Var) bool {
 func collectTypeFiles(pass *analysis.Pass) map[types.Object]string {
 	typeFiles := make(map[types.Object]string)
 	for _, file := range pass.Files {
-		if generated.IsGenerated(file) {
+		if generated.Skipped(file) {
 			continue
 		}
 
@@ -107,7 +107,7 @@ type groupKey struct {
 func collectMethods(pass *analysis.Pass, typeFiles map[types.Object]string) []methodInfo {
 	var methods []methodInfo
 	for _, file := range pass.Files {
-		if generated.IsGenerated(file) {
+		if generated.Skipped(file) {
 			continue
 		}
 
@@ -242,7 +242,7 @@ func checkGrouped(reporter *diagnosticReporter, typeFiles map[types.Object]strin
 }
 
 func checkFileGrouped(reporter *diagnosticReporter, file *ast.File, typeFiles map[types.Object]string) {
-	if generated.IsGenerated(file) {
+	if generated.Skipped(file) {
 		return
 	}
 
