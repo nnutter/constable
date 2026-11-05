@@ -93,9 +93,14 @@ type Unrelated struct{}
 // Keep this method in place.
 func (Unrelated) AlreadyCorrect() {}
 `)
+	// The comment in the import block keeps a fix from taking the fmt import
+	// that Show needs and from deleting it after the move.
 	writeFixture(t, dir, "other.go", `package p
 
-import "fmt"
+import (
+	// Show prints.
+	"fmt"
+)
 
 func (Unsafe) Show() { fmt.Print("x") }
 `)

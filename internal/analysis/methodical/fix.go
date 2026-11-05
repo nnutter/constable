@@ -57,7 +57,7 @@ type fixMethod struct {
 func suggestedFix(pass *analysis.Pass, methods []methodInfo, receiver types.Object) *analysis.SuggestedFix {
 	files, typesByObject := collectFixFiles(pass)
 	candidates, imports, unsafe := collectFixMethods(pass, methods, receiver, files, typesByObject)
-	return makeSuggestedFix(candidates, imports, unsafe)
+	return makeSuggestedFix(pass, files, candidates, imports, unsafe)
 }
 
 func collectFixFiles(pass *analysis.Pass) (map[string]*fixFile, map[types.Object]fixType) {
@@ -91,22 +91,73 @@ func readFixFile(pass *analysis.Pass, file *ast.File) *fixFile {
 	return &fixFile{file: file, token: tf, source: src}
 }
 
-// Moving a declaration out of a file can orphan an import, and moving one in
-// can need an import, so each direction gets its own rule.
-func (f *fixFile) moveSourceSafe(pass *analysis.Pass, moved []*ast.FuncDecl) bool {
+func (f *fixFile) importDeclRemoval(gen *ast.GenDecl) (analysis.TextEdit, bool) {
+	start := gen.Pos()
+	if gen.Doc != nil {
+		start = gen.Doc.Pos()
+	}
+	end := f.token.Offset(gen.End())
+	lineEnd := endOfLine(f.source, end)
+	if !safeLineSuffix(f.source[end:lineEnd]) {
+		return analysis.TextEdit{}, false
+	}
+	return f.removal(f.token.Offset(start), afterBlankLines(f.source, lineEnd)), true
+}
+
+// importRemovals removes whole declarations when they lose every import, so a
+// block that no longer holds anything does not stay behind.
+func (f *fixFile) importRemovals(gen *ast.GenDecl, unused []*ast.ImportSpec) ([]analysis.TextEdit, bool) {
+	if len(unused) == len(gen.Specs) {
+		edit, ok := f.importDeclRemoval(gen)
+		if !ok {
+			return nil, false
+		}
+		return []analysis.TextEdit{edit}, true
+	}
+	var edits []analysis.TextEdit
+	for _, spec := range unused {
+		edit, ok := f.importSpecRemoval(spec)
+		if !ok {
+			return nil, false
+		}
+		edits = append(edits, edit)
+	}
+	return edits, true
+}
+
+// importSpecRemoval takes the blank line next to the import as well, so the
+// remaining imports keep the grouping that gofmt leaves in place.
+func (f *fixFile) importSpecRemoval(spec *ast.ImportSpec) (analysis.TextEdit, bool) {
+	start := lineStart(f.source, f.token.Offset(spec.Pos()))
+	end := f.token.Offset(spec.End())
+	lineEnd := endOfLine(f.source, end)
+	if !safeLineSuffix(f.source[end:lineEnd]) {
+		return analysis.TextEdit{}, false
+	}
+	if lineEnd == len(f.source) {
+		return analysis.TextEdit{}, false
+	}
+	next := lineEnd + 1
+	if isBlankLineAt(f.source, next) {
+		return f.removal(start, endOfLineInclusive(f.source, next)), true
+	}
+	if isBlankLineBefore(f.source, start) {
+		start = lineStart(f.source, start-1)
+	}
+	return f.removal(start, next), true
+}
+
+// A source file loses the declarations that move out of it, along with any
+// import that only they used, so the move edits those imports too.
+func (f *fixFile) moveSourceEdits(pass *analysis.Pass, moved []*ast.FuncDecl) ([]analysis.TextEdit, bool) {
 	if !f.plain() {
-		return false
+		return nil, false
 	}
 	if isCgoFile(f.file) {
-		return false
+		return nil, false
 	}
 	used := usedImports(pass, f.file, moved)
-	for _, spec := range f.file.Imports {
-		if !isImportUsed(pass, used, spec) {
-			return false
-		}
-	}
-	return true
+	return f.removeImports(pass, used)
 }
 
 // A target file only gains declarations, so it must be one that the move may
@@ -127,6 +178,99 @@ func (f *fixFile) plain() bool {
 		return false
 	}
 	return !containsDirective(f.source) && !bytes.Contains(f.source, []byte("// +build"))
+}
+
+func (f *fixFile) removal(start, end int) analysis.TextEdit {
+	return analysis.TextEdit{Pos: f.token.Pos(start), End: f.token.Pos(end)}
+}
+
+// removeImports deletes the imports that no declaration in the file uses any
+// more. It reports false when an import cannot go without taking a comment with
+// it or leaving a line that gofmt would rewrite.
+func (f *fixFile) removeImports(pass *analysis.Pass, used map[importRef]bool) ([]analysis.TextEdit, bool) {
+	var edits []analysis.TextEdit
+	for _, decl := range f.file.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+		if gen.Tok != token.IMPORT {
+			continue
+		}
+		unused := unusedImports(pass, used, gen)
+		if len(unused) == 0 {
+			continue
+		}
+		if hasCommentsIn(f, gen) {
+			return nil, false
+		}
+		removals, ok := f.importRemovals(gen, unused)
+		if !ok {
+			return nil, false
+		}
+		edits = append(edits, removals...)
+	}
+	return edits, true
+}
+
+// tailRemoval takes the blank line that precedes removals that reach the end of
+// the file, and leaves alone a blank line that has to separate what stays.
+func (f *fixFile) tailRemoval(merged []fixRange) (analysis.TextEdit, bool) {
+	if len(merged) == 0 {
+		return analysis.TextEdit{}, false
+	}
+	last := merged[len(merged)-1]
+	if last.end != len(f.source) {
+		return analysis.TextEdit{}, false
+	}
+	limit := 0
+	if len(merged) > 1 {
+		limit = merged[len(merged)-2].end
+	}
+	start := trimBlankTail(f.source, last.start)
+	start = max(start, limit)
+	if start == last.start {
+		return analysis.TextEdit{}, false
+	}
+	return analysis.TextEdit{Pos: f.token.Pos(start), End: f.token.Pos(last.start)}, true
+}
+
+func unusedImports(pass *analysis.Pass, used map[importRef]bool, gen *ast.GenDecl) []*ast.ImportSpec {
+	var unused []*ast.ImportSpec
+	for _, spec := range gen.Specs {
+		importSpec, ok := spec.(*ast.ImportSpec)
+		if !ok {
+			continue
+		}
+		if isImportUsed(pass, used, importSpec) {
+			continue
+		}
+		unused = append(unused, importSpec)
+	}
+	return unused
+}
+
+func isBlankLineAt(src []byte, offset int) bool {
+	if offset >= len(src) {
+		return false
+	}
+	lineEnd := endOfLine(src, offset)
+	return len(bytes.Trim(src[offset:lineEnd], " \t\r")) == 0
+}
+
+func isBlankLineBefore(src []byte, offset int) bool {
+	if offset == 0 {
+		return false
+	}
+	return isBlankLineAt(src, lineStart(src, offset-1))
+}
+
+func endOfLineInclusive(src []byte, offset int) int {
+	end := endOfLine(src, offset)
+	if end < len(src) {
+		return end + 1
+	}
+	return end
 }
 
 // importRef names an import the way the code it serves names it.
@@ -315,6 +459,7 @@ func safeLineSuffix(suffix []byte) bool {
 
 func collectFixMethods(pass *analysis.Pass, methods []methodInfo, receiver types.Object, files map[string]*fixFile, typesByObject map[types.Object]fixType) ([]fixMethod, []analysis.TextEdit, map[types.Object]bool) {
 	var candidates []fixMethod
+	var importEdits []analysis.TextEdit
 	unsafe := make(map[types.Object]bool)
 	moved := make(map[*fixFile][]*ast.FuncDecl)
 	for _, m := range methods {
@@ -334,15 +479,19 @@ func collectFixMethods(pass *analysis.Pass, methods []methodInfo, receiver types
 	// A file can lose an import when several declarations leave it at once, so
 	// judge each source file by everything that leaves it.
 	for file, decls := range moved {
-		if !file.moveSourceSafe(pass, decls) {
+		removals, ok := file.moveSourceEdits(pass, decls)
+		if !ok {
 			unsafe[receiver] = true
+			continue
 		}
+		importEdits = append(importEdits, removals...)
 	}
-	imports, ok := collectImportEdits(pass, candidates)
+	added, ok := collectImportEdits(pass, candidates)
 	if !ok {
 		unsafe[receiver] = true
 	}
-	return candidates, imports, unsafe
+	importEdits = append(importEdits, added...)
+	return candidates, importEdits, unsafe
 }
 
 // collectImportEdits adds the imports that the moved declarations need and the
@@ -686,7 +835,7 @@ func afterBlankLines(src []byte, lineEnd int) int {
 	return end
 }
 
-func makeSuggestedFix(candidates []fixMethod, imports []analysis.TextEdit, unsafe map[types.Object]bool) *analysis.SuggestedFix {
+func makeSuggestedFix(pass *analysis.Pass, files map[string]*fixFile, candidates []fixMethod, imports []analysis.TextEdit, unsafe map[types.Object]bool) *analysis.SuggestedFix {
 	groups := make(map[token.Pos][]fixMethod)
 	for _, m := range candidates {
 		if !unsafe[m.method.typeObj] {
@@ -695,7 +844,6 @@ func makeSuggestedFix(candidates []fixMethod, imports []analysis.TextEdit, unsaf
 	}
 	var edits []analysis.TextEdit
 	for anchor, group := range groups {
-		trimMovedTail(group)
 		slices.SortFunc(group, func(a, b fixMethod) int {
 			return cmp.Or(cmp.Compare(a.target.order, b.target.order), cmp.Compare(genericRank(a.method.decl), genericRank(b.method.decl)), strings.Compare(a.method.methodName, b.method.methodName))
 		})
@@ -711,33 +859,74 @@ func makeSuggestedFix(candidates []fixMethod, imports []analysis.TextEdit, unsaf
 		return nil
 	}
 	edits = append(edits, imports...)
-	return &analysis.SuggestedFix{Message: "Move and order methods after their types", TextEdits: edits}
+	return &analysis.SuggestedFix{Message: "Move and order methods after their types", TextEdits: trimRemovedTails(pass.Fset, files, edits)}
 }
 
-// trimMovedTail takes the blank line before the declarations that a move
-// removes from the end of a file. They kept the blank line that separated them
-// from the declaration above, which would end the file as a blank line.
-func trimMovedTail(group []fixMethod) {
-	slices.SortFunc(group, func(a, b fixMethod) int {
+// fixRange is a span of a source file that a fix removes.
+type fixRange struct {
+	start, end int
+}
+
+// trimRemovedTails keeps a fix from ending a file with a blank line. Text that
+// a fix removes keeps the blank line that separated it from the declaration
+// above, so when the removals reach the end of a file, that blank line goes
+// too.
+func trimRemovedTails(fset *token.FileSet, files map[string]*fixFile, edits []analysis.TextEdit) []analysis.TextEdit {
+	removals := make(map[*fixFile][]fixRange)
+	kept := make([]analysis.TextEdit, 0, len(edits))
+	for _, edit := range edits {
+		fix := editFile(fset, files, edit)
+		if edit.End == edit.Pos {
+			kept = append(kept, edit)
+			continue
+		}
+		if fix == nil {
+			kept = append(kept, edit)
+			continue
+		}
+		removals[fix] = append(removals[fix], fixRange{fix.token.Offset(edit.Pos), fix.token.Offset(edit.End)})
+	}
+	for fix, ranges := range removals {
+		merged := mergeRanges(ranges)
+		tail, ok := fix.tailRemoval(merged)
+		if ok {
+			kept = append(kept, tail)
+		}
+		for _, r := range merged {
+			kept = append(kept, analysis.TextEdit{Pos: fix.token.Pos(r.start), End: fix.token.Pos(r.end)})
+		}
+	}
+	return kept
+}
+
+func editFile(fset *token.FileSet, files map[string]*fixFile, edit analysis.TextEdit) *fixFile {
+	file := fset.File(edit.Pos)
+	if file == nil {
+		return nil
+	}
+	if fset.File(edit.End) != file {
+		return nil
+	}
+	return files[file.Name()]
+}
+
+func mergeRanges(ranges []fixRange) []fixRange {
+	if len(ranges) == 0 {
+		return nil
+	}
+	slices.SortFunc(ranges, func(a, b fixRange) int {
 		return cmp.Compare(a.start, b.start)
 	})
-	last := len(group) - 1
-	fix := group[last].file
-	if fix.token.Offset(group[last].end) != len(fix.source) {
-		return
+	merged := ranges[:1]
+	for _, r := range ranges[1:] {
+		last := &merged[len(merged)-1]
+		if r.start <= last.end {
+			last.end = max(last.end, r.end)
+			continue
+		}
+		merged = append(merged, r)
 	}
-	first := last
-	for isAdjacentToPrevious(group, first) {
-		first--
-	}
-	limit := 0
-	if first > 0 {
-		limit = fix.token.Offset(group[first-1].end)
-	}
-	start := trimBlankTail(fix.source, fix.token.Offset(group[first].start))
-	if start > limit {
-		group[first].start = fix.token.Pos(start)
-	}
+	return merged
 }
 
 // trimBlankTail moves an offset back over the blank lines before it and leaves
@@ -760,15 +949,6 @@ func isBlankByte(b byte) bool {
 	default:
 		return false
 	}
-}
-
-// isAdjacentToPrevious reports whether a removal starts where the one before it
-// ends, so both reach back to the same blank line.
-func isAdjacentToPrevious(group []fixMethod, i int) bool {
-	if i == 0 {
-		return false
-	}
-	return group[i-1].end == group[i].start
 }
 
 func genericRank(decl *ast.FuncDecl) int {

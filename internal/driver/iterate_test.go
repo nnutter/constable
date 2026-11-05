@@ -119,15 +119,15 @@ func TestMethodicalCumulativeFix(t *testing.T) {
 
 func TestMethodicalCrossFileFix(t *testing.T) {
 	types := "package fix\n\nimport (\n\t\"strings\"\n)\n\ntype Widget struct{}\n\nfunc (Widget) Trim(s string) string { return strings.TrimSpace(s) }\n\nvar Widgets = 0\n"
-	methods := "package fix\n\nimport \"fmt\"\n\ntype Gadget struct{}\n\nfunc (Gadget) Show(s string) { fmt.Print(s) }\n\nfunc (Widget) Alpha(s string) { fmt.Print(s) }\n\nvar Gadgets = 0\n"
+	methods := "package fix\n\nimport (\n\t\"fmt\"\n\t\"os\"\n)\n\ntype Gadget struct{}\n\nfunc (Gadget) Show(s string) { fmt.Print(s) }\n\nfunc (Widget) Alpha() { fmt.Print(os.Args) }\n\nvar Gadgets = 0\n"
 	fixRepoFiles(t, map[string]string{"types.go": types, "methods.go": methods})
 	code, output, diagnostics := runFix(t, methodical.Analyzer, false)
 	require.Equal(t, 0, code)
 	require.Empty(t, output)
 	require.Empty(t, diagnostics)
 
-	wantTypes := "package fix\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n\ntype Widget struct{}\n\nfunc (Widget) Alpha(s string) { fmt.Print(s) }\n\nfunc (Widget) Trim(s string) string { return strings.TrimSpace(s) }\n\nvar Widgets = 0\n"
-	wantMethods := "package fix\n\nimport \"fmt\"\n\ntype Gadget struct{}\n\nfunc (Gadget) Show(s string) { fmt.Print(s) }\n\nvar Gadgets = 0\n"
+	wantTypes := "package fix\n\nimport (\n\t\"fmt\"\n\t\"os\"\n\t\"strings\"\n)\n\ntype Widget struct{}\n\nfunc (Widget) Alpha() { fmt.Print(os.Args) }\n\nfunc (Widget) Trim(s string) string { return strings.TrimSpace(s) }\n\nvar Widgets = 0\n"
+	wantMethods := "package fix\n\nimport (\n\t\"fmt\"\n)\n\ntype Gadget struct{}\n\nfunc (Gadget) Show(s string) { fmt.Print(s) }\n\nvar Gadgets = 0\n"
 	for name, want := range map[string]string{"types.go": wantTypes, "methods.go": wantMethods} {
 		data, err := os.ReadFile(name)
 		require.NoError(t, err)
