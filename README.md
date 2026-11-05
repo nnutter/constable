@@ -95,6 +95,31 @@ if a && isB() { // allowed
 
 The check also covers `for` conditions and bool assignments such as `c := a && b`, including negated variables, field and map access, and comparisons.
 
+## Fixes
+
+`-fix` applies the fixes that the analyzers suggest, and `-fix -diff` prints the change instead of writing it.
+
+```sh
+constable -fix ./...
+constable -fix -diff ./...
+```
+
+Only the methodical analyzer suggests fixes today.
+It places every method of a reported type directly after the type declaration, in order, and a method that lives in another file moves into the file that declares its type.
+
+A move fixes the import blocks of both files:
+
+- The new file gains the imports that the moved method needs.
+- The old file loses the imports that no declaration uses any more.
+
+A move is conservative, because the analyzer must be sure that the result compiles and reads well:
+
+- The fix skips the move when the new file already binds a needed name to another package, or when the import block that it would edit holds comments.
+- The fix skips generated files, files with build constraints, Go directives, or a build suffix in the file name, files that use cgo, files with comments that no declaration owns, and declarations that do not start their own line.
+
+A fix writes only files that Git tracks and that have no changes, so `git checkout` recovers a fix that went wrong.
+Diagnostics that remain after the fixes are printed, and the command exits unsuccessfully.
+
 ## Development
 
 Run all fixes,

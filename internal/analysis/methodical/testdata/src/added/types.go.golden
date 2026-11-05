@@ -1,0 +1,8 @@
+package added
+
+import "fmt"
+
+type Widget struct{}
+
+// Alpha needs the fmt import in its new file.
+func (Widget) Alpha(s string) { fmt.Print(s) } // want "method Alpha of type Widget should be in same file"

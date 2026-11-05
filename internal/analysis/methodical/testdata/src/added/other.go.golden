@@ -1,0 +1,7 @@
+package added
+
+import "fmt"
+
+type Gadget struct{}
+
+func (Gadget) Show(s string) { fmt.Print(s) }
