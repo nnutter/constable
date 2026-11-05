@@ -8,6 +8,7 @@ import (
 	"github.com/nnutter/constable/internal/analysis/predicates"
 	"github.com/nnutter/constable/internal/analysis/sumtype"
 	"github.com/nnutter/constable/internal/analysis/testify"
+	"github.com/nnutter/constable/internal/analysis/testifylint"
 	"github.com/nnutter/constable/internal/driver"
 )
 
@@ -26,5 +27,6 @@ func main() {
 		complexity.Analyzer,
 		errcheck.Analyzer,
 		sumtype.Analyzer,
+		testifylint.Analyzer,
 	)
 }
