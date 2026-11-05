@@ -13,7 +13,7 @@ func TestAnalyzer(t *testing.T) {
 }
 
 func TestSuggestedFixes(t *testing.T) {
-	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), methodical.Analyzer, "fix", "generic", "imports")
+	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), methodical.Analyzer, "fix", "generic", "imports", "keeps")
 }
 
 func TestAnalyzerSkipsGeneratedFiles(t *testing.T) {

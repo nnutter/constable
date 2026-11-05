@@ -92,8 +92,20 @@ func readFixFile(pass *analysis.Pass, file *ast.File) *fixFile {
 
 // Moving a declaration out of a file can orphan an import, and moving one in
 // can need an import, so each direction gets its own rule.
-func (f *fixFile) moveSourceSafe() bool {
-	return f.plain() && hasNoImports(f.file)
+func (f *fixFile) moveSourceSafe(pass *analysis.Pass, moved []*ast.FuncDecl) bool {
+	if !f.plain() {
+		return false
+	}
+	if isCgoFile(f.file) {
+		return false
+	}
+	used := usedImports(pass, f.file, moved)
+	for _, spec := range f.file.Imports {
+		if !isImportUsed(pass, used, spec) {
+			return false
+		}
+	}
+	return true
 }
 
 func (f *fixFile) moveTargetSafe(pass *analysis.Pass, decl *ast.FuncDecl) bool {
@@ -132,7 +144,7 @@ type importRef struct {
 // declImports lists the imports that a declaration needs to compile in a
 // different file. A qualified identifier needs the name that qualifies it, and
 // a bare identifier from another package needs a dot import.
-func declImports(pass *analysis.Pass, decl *ast.FuncDecl) []importRef {
+func declImports(pass *analysis.Pass, decl ast.Node) []importRef {
 	var refs []importRef
 	selectors := make(map[*ast.Ident]bool)
 	seen := make(map[importRef]bool)
@@ -223,8 +235,49 @@ func isCgoImport(spec *ast.ImportSpec) bool {
 	return path == "C"
 }
 
-func hasNoImports(file *ast.File) bool {
-	return len(file.Imports) == 0
+// usedImports lists the imports that the declarations which stay in the file
+// still reference. The moved declarations leave the file, so their uses do not
+// keep an import alive.
+func usedImports(pass *analysis.Pass, file *ast.File, moved []*ast.FuncDecl) map[importRef]bool {
+	skipped := make(map[*ast.FuncDecl]bool, len(moved))
+	for _, decl := range moved {
+		skipped[decl] = true
+	}
+	used := make(map[importRef]bool)
+	for _, decl := range file.Decls {
+		if isMovedDecl(decl, skipped) {
+			continue
+		}
+		for _, ref := range declImports(pass, decl) {
+			used[ref] = true
+		}
+	}
+	return used
+}
+
+func isMovedDecl(decl ast.Decl, skipped map[*ast.FuncDecl]bool) bool {
+	funcDecl, ok := decl.(*ast.FuncDecl)
+	if !ok {
+		return false
+	}
+	return skipped[funcDecl]
+}
+
+func isImportUsed(pass *analysis.Pass, used map[importRef]bool, spec *ast.ImportSpec) bool {
+	pkgName := importPkgName(pass, spec)
+	if pkgName == nil {
+		return false
+	}
+	// A blank import only runs package initialization, so a file cannot
+	// orphan it.
+	if isBlankName(pkgName.Name()) {
+		return true
+	}
+	return used[importRef{name: pkgName.Name(), path: pkgName.Imported().Path()}]
+}
+
+func isBlankName(name string) bool {
+	return name == "_"
 }
 
 func containsDirective(src []byte) bool {
@@ -269,6 +322,7 @@ func safeLineSuffix(suffix []byte) bool {
 func collectFixMethods(pass *analysis.Pass, methods []methodInfo, receiver types.Object, files map[string]*fixFile, typesByObject map[types.Object]fixType) ([]fixMethod, map[types.Object]bool) {
 	var candidates []fixMethod
 	unsafe := make(map[types.Object]bool)
+	moved := make(map[*fixFile][]*ast.FuncDecl)
 	for _, m := range methods {
 		if m.typeObj != receiver {
 			continue
@@ -279,6 +333,16 @@ func collectFixMethods(pass *analysis.Pass, methods []methodInfo, receiver types
 			continue
 		}
 		candidates = append(candidates, candidate)
+		if candidate.file != candidate.target.file {
+			moved[candidate.file] = append(moved[candidate.file], candidate.method.decl)
+		}
+	}
+	// A file can lose an import when several declarations leave it at once, so
+	// judge each source file by everything that leaves it.
+	for file, decls := range moved {
+		if !file.moveSourceSafe(pass, decls) {
+			unsafe[receiver] = true
+		}
 	}
 	return candidates, unsafe
 }
@@ -291,9 +355,6 @@ func fixMethodFor(pass *analysis.Pass, m methodInfo, srcFile *fixFile, target fi
 		return fixMethod{}, false
 	}
 	if srcFile != target.file {
-		if !srcFile.moveSourceSafe() {
-			return fixMethod{}, false
-		}
 		if !target.file.moveTargetSafe(pass, m.decl) {
 			return fixMethod{}, false
 		}

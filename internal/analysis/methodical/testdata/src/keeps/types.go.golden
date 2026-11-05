@@ -1,0 +1,10 @@
+package keeps
+
+import "strings"
+
+type Widget struct{}
+
+// Alpha keeps the fmt import alive through Show alone.
+func (Widget) Alpha() {} // want "method Alpha of type Widget should be in same file"
+
+func (Widget) Trim(s string) string { return strings.TrimSpace(s) }
