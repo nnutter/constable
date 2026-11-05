@@ -10,6 +10,7 @@ import (
 
 	"github.com/nnutter/constable/internal/directive"
 	"github.com/nnutter/constable/internal/directive/enum"
+	"github.com/nnutter/constable/internal/generated"
 	"github.com/nnutter/constable/internal/report"
 )
 
@@ -59,6 +60,10 @@ func hasNoArgs(call *ast.CallExpr) bool {
 
 func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
+		if generated.IsGenerated(file) {
+			continue
+		}
+
 		for _, decl := range file.Decls {
 			funcDecl, ok := decl.(*ast.FuncDecl)
 			if !succeeded(ok) || !hasNonmutatingDirective(funcDecl) || isNilBody(funcDecl.Body) {
