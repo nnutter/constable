@@ -3,6 +3,7 @@ package driver_test
 import (
 	"fmt"
 	"go/ast"
+	"go/format"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -57,6 +58,22 @@ func runFix(t *testing.T, analyzer *analysis.Analyzer, diff bool) (int, string, 
 	diagnostics, err := os.ReadFile(errout.Name())
 	require.NoError(t, err)
 	return code, string(output), string(diagnostics)
+}
+
+func TestMethodicalFixTrimsTrailingBlankLine(t *testing.T) {
+	source := "package fix\n\ntype Widget struct{}\n\nfunc (Widget) Z() {}\n\nfunc (Widget) A() {}\n"
+	fixRepo(t, source)
+	code, output, diagnostics := runFix(t, methodical.Analyzer, false)
+	require.Equal(t, 0, code)
+	require.Empty(t, output)
+	require.Empty(t, diagnostics)
+	want := "package fix\n\ntype Widget struct{}\n\nfunc (Widget) A() {}\n\nfunc (Widget) Z() {}\n"
+	data, err := os.ReadFile("fix.go")
+	require.NoError(t, err)
+	require.Equal(t, want, string(data))
+	formatted, err := format.Source(data)
+	require.NoError(t, err)
+	require.Equal(t, string(formatted), string(data), "the fixed file is not formatted")
 }
 
 func TestMethodicalCumulativeFix(t *testing.T) {

@@ -219,6 +219,7 @@ func makeSuggestedFix(candidates []fixMethod, unsafe map[types.Object]bool) *ana
 	}
 	var edits []analysis.TextEdit
 	for anchor, group := range groups {
+		trimMovedTail(group)
 		slices.SortFunc(group, func(a, b fixMethod) int {
 			return cmp.Or(cmp.Compare(a.target.order, b.target.order), cmp.Compare(genericRank(a.method.decl), genericRank(b.method.decl)), strings.Compare(a.method.methodName, b.method.methodName))
 		})
@@ -234,6 +235,63 @@ func makeSuggestedFix(candidates []fixMethod, unsafe map[types.Object]bool) *ana
 		return nil
 	}
 	return &analysis.SuggestedFix{Message: "Move and order methods after their types", TextEdits: edits}
+}
+
+// trimMovedTail takes the blank line before the declarations that a move
+// removes from the end of a file. They kept the blank line that separated them
+// from the declaration above, which would end the file as a blank line.
+func trimMovedTail(group []fixMethod) {
+	slices.SortFunc(group, func(a, b fixMethod) int {
+		return cmp.Compare(a.start, b.start)
+	})
+	last := len(group) - 1
+	fix := group[last].file
+	if fix.token.Offset(group[last].end) != len(fix.source) {
+		return
+	}
+	first := last
+	for isAdjacentToPrevious(group, first) {
+		first--
+	}
+	limit := 0
+	if first > 0 {
+		limit = fix.token.Offset(group[first-1].end)
+	}
+	start := trimBlankTail(fix.source, fix.token.Offset(group[first].start))
+	if start > limit {
+		group[first].start = fix.token.Pos(start)
+	}
+}
+
+// trimBlankTail moves an offset back over the blank lines before it and leaves
+// the newline that ends the line above.
+func trimBlankTail(src []byte, offset int) int {
+	end := offset
+	for end > 0 && isBlankByte(src[end-1]) {
+		end--
+	}
+	if n := bytes.IndexByte(src[end:offset], '\n'); n >= 0 {
+		return end + n + 1
+	}
+	return offset
+}
+
+func isBlankByte(b byte) bool {
+	switch b {
+	case '\n', '\r', ' ', '\t':
+		return true
+	default:
+		return false
+	}
+}
+
+// isAdjacentToPrevious reports whether a removal starts where the one before it
+// ends, so both reach back to the same blank line.
+func isAdjacentToPrevious(group []fixMethod, i int) bool {
+	if i == 0 {
+		return false
+	}
+	return group[i-1].end == group[i].start
 }
 
 func genericRank(decl *ast.FuncDecl) int {
