@@ -6,6 +6,7 @@ import (
 
 	"golang.org/x/tools/go/analysis"
 
+	"github.com/nnutter/constable/internal/generated"
 	"github.com/nnutter/constable/internal/report"
 )
 
@@ -41,6 +42,10 @@ func isLogicalOr(op token.Token) bool {
 
 func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
+		if generated.IsGenerated(file) {
+			continue
+		}
+
 		for _, decl := range file.Decls {
 			funcDecl, ok := decl.(*ast.FuncDecl)
 			if !isFuncDecl(ok) || isNilBody(funcDecl.Body) {
