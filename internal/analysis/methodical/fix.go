@@ -32,10 +32,9 @@ func (r *diagnosticReporter) report(d analysis.Diagnostic, obj types.Object) {
 }
 
 type fixFile struct {
-	file      *ast.File
-	token     *token.File
-	source    []byte
-	crossSafe bool
+	file   *ast.File
+	token  *token.File
+	source []byte
 }
 
 type fixType struct {
@@ -87,18 +86,32 @@ func readFixFile(pass *analysis.Pass, file *ast.File) *fixFile {
 	if err != nil || generated.IsGenerated(file) || hasStandaloneComments(pass.Fset, file) {
 		return nil
 	}
-	base := strings.TrimSuffix(filepath.Base(tf.Name()), ".go")
-	return &fixFile{file: file, token: tf, source: src, crossSafe: crossFileSafe(base, file, src)}
+	return &fixFile{file: file, token: tf, source: src}
 }
 
-func crossFileSafe(base string, file *ast.File, src []byte) bool {
+// Moving a declaration out of a file can orphan an import, and moving one in
+// can need an import, so each direction gets its own rule.
+func (f *fixFile) moveSourceSafe() bool {
+	return f.plain() && hasNoImports(f.file)
+}
+
+func (f *fixFile) moveTargetSafe() bool {
+	return f.plain() && hasNoImports(f.file)
+}
+
+// A cross-file move must not cross build constraints or position directives,
+// or the method could leave some builds. The file name can carry a constraint,
+// and so can a directive inside the file.
+func (f *fixFile) plain() bool {
+	base := strings.TrimSuffix(filepath.Base(f.token.Name()), ".go")
 	if strings.Contains(base, "_") {
 		return false
 	}
-	if len(file.Imports) != 0 {
-		return false
-	}
-	return !containsDirective(src) && !bytes.Contains(src, []byte("// +build"))
+	return !containsDirective(f.source) && !bytes.Contains(f.source, []byte("// +build"))
+}
+
+func hasNoImports(file *ast.File) bool {
+	return len(file.Imports) == 0
 }
 
 func containsDirective(src []byte) bool {
@@ -165,10 +178,10 @@ func fixMethodFor(pass *analysis.Pass, m methodInfo, srcFile *fixFile, target fi
 		return fixMethod{}, false
 	}
 	if srcFile != target.file {
-		if !srcFile.crossSafe {
+		if !srcFile.moveSourceSafe() {
 			return fixMethod{}, false
 		}
-		if !target.file.crossSafe {
+		if !target.file.moveTargetSafe() {
 			return fixMethod{}, false
 		}
 	}
