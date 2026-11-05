@@ -16,9 +16,12 @@ exclude = List("**/testdata/**")
 
 // This repository develops constable, so every hook runs the working tree's
 // build instead of the installed release.
+// nilaway is part of constable now, and it reads every dependency unless it is
+// told which module to analyze. Without the flag, a hook spends seconds and
+// gigabytes on the standard library.
 local const constableDev = (Extra.constable) {
-  check = "go run ./cmd/constable ./..."
-  fix = "go run ./cmd/constable -fix ./..."
+  check = "go run ./cmd/constable -nilaway_config.include-pkgs=$(go list -m) ./..."
+  fix = "go run ./cmd/constable -nilaway_config.include-pkgs=$(go list -m) -fix ./..."
 }
 
 // The templates build the check, fix, pre-commit, and commit-msg hooks, and

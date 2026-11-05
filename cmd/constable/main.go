@@ -4,6 +4,7 @@ import (
 	"github.com/nnutter/constable/internal/analysis/complexity"
 	"github.com/nnutter/constable/internal/analysis/errcheck"
 	"github.com/nnutter/constable/internal/analysis/methodical"
+	"github.com/nnutter/constable/internal/analysis/nilaway"
 	"github.com/nnutter/constable/internal/analysis/nonmutating"
 	"github.com/nnutter/constable/internal/analysis/predicates"
 	"github.com/nnutter/constable/internal/analysis/sumtype"
@@ -28,5 +29,6 @@ func main() {
 		errcheck.Analyzer,
 		sumtype.Analyzer,
 		testifylint.Analyzer,
+		nilaway.Analyzer,
 	)
 }
