@@ -1,7 +1,5 @@
 name: Update Tap
 on:
-  push:
-    tags: ["v*"]
   release:
     types: [published]
   workflow_dispatch:
@@ -28,18 +26,8 @@ jobs:
         env:
           EVENT_TAG: ${{ github.event.release.tag_name }}
           INPUT_TAG: ${{ inputs.tag }}
-          REF_TAG: ${{ github.ref_name }}
-          REF_TYPE: ${{ github.ref_type }}
         run: |
-          if [[ -n "$EVENT_TAG" ]]; then
-            tag="$EVENT_TAG"
-          elif [[ -n "$INPUT_TAG" ]]; then
-            tag="$INPUT_TAG"
-          elif [[ "$REF_TYPE" == "tag" ]]; then
-            tag="$REF_TAG"
-          else
-            tag=""
-          fi
+          tag="${EVENT_TAG:-$INPUT_TAG}"
           if [[ -z "$tag" ]]; then
             echo "A release tag is required." >&2
             exit 1
