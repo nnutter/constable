@@ -9,6 +9,36 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+// flagUsage returns the usage of a registered flag, or an empty string so that
+// the test reports the missing flag instead of a panic.
+func flagUsage(t *testing.T, fs *flag.FlagSet, name string) string {
+	t.Helper()
+
+	f := fs.Lookup(name)
+	require.NotNil(t, f, "flag %s is not registered", name)
+	// The nil check states that a flag can be missing, so the analyzer that
+	// looks for nil dereferences sees the guard that require makes.
+	if f == nil {
+		return ""
+	}
+	return f.Usage
+}
+
+// flagValue returns the value of a registered flag, or an empty string so that
+// the test reports the missing flag instead of a panic.
+func flagValue(t *testing.T, fs *flag.FlagSet, name string) string {
+	t.Helper()
+
+	f := fs.Lookup(name)
+	require.NotNil(t, f, "flag %s is not registered", name)
+	// The nil check states that a flag can be missing, so the analyzer that
+	// looks for nil dereferences sees the guard that require makes.
+	if f == nil {
+		return ""
+	}
+	return f.Value.String()
+}
+
 func newAnalyzer(name string, requires ...*analysis.Analyzer) *analysis.Analyzer {
 	return &analysis.Analyzer{
 		Name:     name,
@@ -36,8 +66,8 @@ func TestRegisterFlagsRegistersRequiredAnalyzerFlags(t *testing.T) {
 	assert.Nil(t, fs.Lookup("required"), "a required analyzer has no enable flag")
 
 	require.NoError(t, fs.Parse([]string{"-required.on", "-required.scope=example.com/m"}))
-	assert.Equal(t, "true", fs.Lookup("required.on").Value.String())
-	assert.Equal(t, "example.com/m", fs.Lookup("required.scope").Value.String())
+	assert.Equal(t, "true", flagValue(t, fs, "required.on"))
+	assert.Equal(t, "example.com/m", flagValue(t, fs, "required.scope"))
 }
 
 func TestRegisterFlagsVisitsAnAnalyzerOnce(t *testing.T) {
@@ -62,5 +92,5 @@ func TestRegisterFlagsKeepsAnExistingFlag(t *testing.T) {
 	fs.Bool("analyzer.on", false, "a flag that the driver already defines")
 	registerFlags(fs, []*analysis.Analyzer{analyzer})
 
-	assert.Equal(t, "a flag that the driver already defines", fs.Lookup("analyzer.on").Usage)
+	assert.Equal(t, "a flag that the driver already defines", flagUsage(t, fs, "analyzer.on"))
 }

@@ -143,15 +143,22 @@ Reports a test that misuses testify.
 ### nilaway
 
 Reports a nil value that flows to a dereference.
-NilAway reads every dependency by default, which costs seconds and gigabytes.
-Give it the module of the code that constable analyzes:
+
+NilAway reads every package that it loads by default, which costs seconds and gigabytes and reports flows that the code under analysis cannot fix.
+constable limits it to the main modules of the packages that it analyzes.
+Two flags change the choice,
 
 ```sh
-constable -nilaway_config.include-pkgs=$(go list -m) ./...
+# Analyze the packages in this module, and no other package.
+constable -nilaway_config.include-pkgs=example.com/my/module ./...
+
+# Analyze every package, including dependencies and the standard library.
+constable -nilaway.include-all-pkgs ./...
 ```
 
+An explicit `-nilaway_config.include-pkgs` wins over `-nilaway.include-all-pkgs`, and both win over the default.
 The `nilaway_config` prefix is the name of the analyzer that holds the configuration, not the name of the analyzer that reports the diagnostic.
-The driver registers the flags of a required analyzer, so this flag reaches the analyzer that reads it.
+The driver registers the flags of a required analyzer, so that flag reaches the analyzer that reads it.
 
 ## Development
 

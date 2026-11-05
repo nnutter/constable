@@ -318,13 +318,14 @@ func TestCLIEmbeddedAnalyzerFlags(t *testing.T) {
 		"testifylint",
 		"testifylint.disable-all",
 		"nilaway",
+		"nilaway.include-all-pkgs",
 		"nilaway_config.include-pkgs",
 	} {
 		assert.Contains(t, string(output), `"`+name+`"`)
 	}
 }
 
-func TestCLIEmbeddedNilawayReadsRequiredAnalyzerFlag(t *testing.T) {
+func TestCLIEmbeddedNilawayPackages(t *testing.T) {
 	binary := buildBinary(t)
 	moduleDir := writeModule(t, module{
 		GoMod: []string{
@@ -350,9 +351,12 @@ func TestCLIEmbeddedNilawayReadsRequiredAnalyzerFlag(t *testing.T) {
 	require.NoError(t, err, output)
 	assert.Empty(t, output)
 
-	output, err = runConstable(t, binary, moduleDir)
-	require.Error(t, err)
-	assert.Contains(t, output, "Potential nil panic detected")
+	// The default covers the main module, and every package keeps the report.
+	for _, args := range [][]string{{}, {"-nilaway.include-all-pkgs"}} {
+		output, err = runConstable(t, binary, moduleDir, args...)
+		require.Error(t, err, "args=%v output=%s", args, output)
+		assert.Contains(t, output, "Potential nil panic detected", "args=%v", args)
+	}
 }
 
 func TestCLIEmbeddedAnalyzersSkipGeneratedFiles(t *testing.T) {

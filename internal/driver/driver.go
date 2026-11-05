@@ -628,7 +628,8 @@ func outputFinalFixes(original, state map[string][]byte, cwd string, diff bool) 
 }
 
 func prepareFixPass(files map[string]*fixFile, original, state map[string][]byte) (map[string][]byte, bool, error) {
-	next := maps.Clone(state)
+	next := make(map[string][]byte, len(state))
+	maps.Copy(next, state)
 	changed := false
 	for name, file := range files {
 		if err := prepareFixFile(name, file); err != nil {

@@ -21,7 +21,7 @@ var version string
 func main() {
 	driver.Main(
 		version,
-		driver.Hooks{},
+		driver.Hooks{AfterLoad: nilaway.UseMainModules},
 		nonmutating.Analyzer,
 		methodical.Analyzer,
 		predicates.Analyzer,
