@@ -122,3 +122,34 @@ func DeletesLocalMap() {
 func MutatesDoublePointer(pp **int) {
 	**pp = 1 // want "//constable:nonmutating function mutates pointer parameter pp"
 }
+
+type Element struct{ n int }
+
+//constable:nonmutating
+func MutatesFieldOfSliceElement(elements []Element) {
+	elements[0].n = 1 // want "//constable:nonmutating function mutates parameter elements"
+}
+
+//constable:nonmutating
+func MutatesNestedSliceElementField(ss [][]Element) {
+	ss[0][0].n = 1 // want "//constable:nonmutating function mutates parameter ss"
+}
+
+type Inner struct{ data []byte }
+
+type Outer struct{ inner Inner }
+
+//constable:nonmutating
+func MutatesFieldThroughDeref(p *Outer) {
+	(*p).inner.data[0] = 0 // want "//constable:nonmutating function mutates pointer parameter p"
+}
+
+//constable:nonmutating
+func (o Outer) ClearNestedField() {
+	o.inner.data[0] = 0 // want "//constable:nonmutating method mutates receiver o"
+}
+
+//constable:nonmutating
+func (o Outer) ReplacesNestedField() {
+	o.inner = Inner{}
+}
