@@ -3,6 +3,7 @@ module github.com/nnutter/constable
 go 1.27.3
 
 require (
+	github.com/alecthomas/go-check-sumtype v0.5.0
 	github.com/kisielk/errcheck v1.30.0
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/tools v0.52.0

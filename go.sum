@@ -1,3 +1,5 @@
+github.com/alecthomas/go-check-sumtype v0.5.0 h1:yIFGZYGU5xv64lXp0llRhji/d/kDfS6AaqOI+wAxTqM=
+github.com/alecthomas/go-check-sumtype v0.5.0/go.mod h1:z2jV5/4nQ3XRzKG7PMrJ46DE2NtdnMjQA/fzfzWH81Q=
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
 github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
 github.com/kisielk/errcheck v1.30.0 h1:ZIxNDAfAd4larXHTceoZP/dYPAB90dHg1OYhA2sVh5k=
