@@ -19,6 +19,9 @@ gofumpt = "latest"
 hk = "2.11.1"
 pkl = "latest"
 "pypi:agentskills-tools" = "latest"
+# Python stays on the release that mise.lock records: agentskills-tools needs
+# pyyaml, and pyyaml 6.0.3 has no CPython 3.15 wheel, so the pypi backend,
+# which installs with --no-build, fails on the 3.15 that latest resolves to.
 python = "latest"
 staticcheck = "latest"
 tombi = "latest"
