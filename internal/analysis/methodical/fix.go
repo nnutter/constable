@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
+
+	"github.com/nnutter/constable/internal/generated"
 )
 
 type diagnosticReporter struct {
@@ -82,7 +84,7 @@ func readFixFile(pass *analysis.Pass, file *ast.File) *fixFile {
 		return nil
 	}
 	src, err := pass.ReadFile(tf.Name())
-	if err != nil || ast.IsGenerated(file) || hasStandaloneComments(pass.Fset, file) {
+	if err != nil || generated.IsGenerated(file) || hasStandaloneComments(pass.Fset, file) {
 		return nil
 	}
 	base := strings.TrimSuffix(filepath.Base(tf.Name()), ".go")

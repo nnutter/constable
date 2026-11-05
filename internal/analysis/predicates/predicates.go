@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/tools/go/analysis"
 
+	"github.com/nnutter/constable/internal/generated"
 	"github.com/nnutter/constable/internal/report"
 )
 
@@ -54,6 +55,10 @@ func isBoolName(ident *ast.Ident) bool {
 
 func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
+		if generated.IsGenerated(file) {
+			continue
+		}
+
 		ast.Inspect(file, func(node ast.Node) bool {
 			expr, ok := node.(*ast.BinaryExpr)
 			if !succeeded(ok) || !isLogicalExpr(expr) {

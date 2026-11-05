@@ -6,6 +6,7 @@ import (
 
 	"golang.org/x/tools/go/analysis"
 
+	"github.com/nnutter/constable/internal/generated"
 	"github.com/nnutter/constable/internal/report"
 )
 
@@ -46,6 +47,10 @@ var testifyPackages = map[string]string{
 
 func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
+		if generated.IsGenerated(file) {
+			continue
+		}
+
 		ast.Inspect(file, func(node ast.Node) bool {
 			call, ok := node.(*ast.CallExpr)
 			if !ok {
