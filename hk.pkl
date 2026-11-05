@@ -1,64 +1,49 @@
+// hk's own builtins, the extra builtins, and the hook templates from
+// nnutter/hk-config. The hk-config version must target the hk pin in
+// mise.toml, and the revision is the newest one released for that hk version.
 amends
-  "package://github.com/nnutter/hk-config/releases/download/v2.11.1-0/hk-config@2.11.1-0#/Config.pkl"
+  "package://github.com/nnutter/hk-config/releases/download/v2.11.1-2/hk-config@2.11.1-2#/Config.pkl"
 
-import "package://github.com/jdx/hk/releases/download/v2.11.1/hk@2.11.1#/Builtins.pkl" as Hk
 import
-  "package://github.com/nnutter/hk-config/releases/download/v2.11.1-0/hk-config@2.11.1-0#/Builtins.pkl"
+  "package://github.com/nnutter/hk-config/releases/download/v2.11.1-2/hk-config@2.11.1-2#/Builtins.pkl"
   as Extra
+import
+  "package://github.com/nnutter/hk-config/releases/download/v2.11.1-2/hk-config@2.11.1-2#/Hooks.pkl"
+  as Hooks
 
 /// Test fixtures hold deliberately invalid input for the tests that read them.
 exclude = List("**/testdata/**")
 
-steps {
-  // Use a custom constable step in order to use the development version of constable.
-  ["constable"] {
-    check = "go run ./cmd/constable ./..."
-  }
-  ["errcheck"] = Hk.err_check
-  ["gitleaks"] = Hk.gitleaks
-  ["go_check_sumtype"] = Extra.go_check_sumtype
-  ["go_fix"] = Hk.go_fix
-  ["go_fumpt"] = Hk.go_fumpt
-  ["go_imports"] = Extra.go_imports
-  ["go_sec"] = Extra.go_sec
-  ["go_vet"] = Hk.go_vet
-  ["go_vuln_check"] = Hk.go_vuln_check
-  ["gomod_tidy"] = Hk.gomod_tidy
-  ["mdlint"] = Extra.mdlint
-  ["newlines"] = Hk.newlines
-  ["nilaway"] = Extra.nilaway
-  ["pkl"] = Hk.pkl
-  ["pkl_format"] = Hk.pkl_format
-  ["skills_ref"] = Extra.skills_ref
-  ["staticcheck"] = Hk.staticcheck
-  ["testifylint"] = Extra.testifylint
-  ["tombi"] = Hk.tombi
-  ["tombi_format"] = Hk.tombi_format
-  ["trailing_whitespace"] = Hk.trailing_whitespace
-  ["yamlfmt"] = Hk.yamlfmt
+// This repository develops constable, so every hook runs the working tree's
+// build instead of the installed release.
+local const constableDev = (Extra.constable) {
+  check = "go run ./cmd/constable ./..."
+  fix = "go run ./cmd/constable -fix ./..."
 }
 
-hooks {
-  ["commit-msg"] {
-    fix = true
+// The templates build the check, fix, pre-commit, and commit-msg hooks, and
+// they order the steps of each hook that fixes: the steps that rewrite files
+// run in the order their edits must land, and every step that only reads waits
+// for the last fixer, so the readers run together. `check` sets no order.
+// `go`, `toml`, `yaml`, and `agentskills` are the groups this repository needs.
+//
+// A replaced step is a new step, so the template's order does not reach it: the
+// go group runs constable after testifylint, and the replacement keeps that
+// place in the hooks that fix.
+hooks = (Hooks.all(List("go", "toml", "yaml", "agentskills"))) {
+  ["check"] {
     steps {
-      ["change-id"] = Extra.timber_commit_msg
+      ["constable"] = constableDev
+    }
+  }
+  ["fix"] {
+    steps {
+      ["constable"] = (constableDev) { depends = List("testifylint") }
     }
   }
   ["pre-commit"] {
-    fix = true
-    stage = true
-    stash = "git"
     steps {
-      // No file filter: scan every staged change, including arbitrary types,
-      // binary files, deletions, and commits without Go or Markdown changes.
-      // The git-mode scan only sees text diffs, so staged binary bytes are
-      // checked out to a temporary directory and scanned explicitly.
-      ["gitleaks"] = (Hk.gitleaks) {
-        scan = "staged"
-        check =
-          "gitleaks git --redact --pre-commit --staged --verbose --no-banner && tmp=$(mktemp -d) || exit $?; trap 'rm -rf \"$tmp\"' EXIT INT TERM; git diff --cached --name-only -z --diff-filter=ACMRT > \"$tmp/list\" || exit $?; git checkout-index -z --stdin --prefix=\"$tmp/tree/\" < \"$tmp/list\" || exit $?; mkdir -p \"$tmp/tree\" || exit $?; gitleaks dir --redact --verbose --no-banner \"$tmp/tree\" || exit $?"
-      }
+      ["constable"] = (constableDev) { depends = List("testifylint") }
     }
   }
 }
