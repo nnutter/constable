@@ -2,10 +2,14 @@ package main
 
 import (
 	"github.com/nnutter/constable/internal/analysis/complexity"
+	"github.com/nnutter/constable/internal/analysis/errcheck"
 	"github.com/nnutter/constable/internal/analysis/methodical"
+	"github.com/nnutter/constable/internal/analysis/nilaway"
 	"github.com/nnutter/constable/internal/analysis/nonmutating"
 	"github.com/nnutter/constable/internal/analysis/predicates"
+	"github.com/nnutter/constable/internal/analysis/sumtype"
 	"github.com/nnutter/constable/internal/analysis/testify"
+	"github.com/nnutter/constable/internal/analysis/testifylint"
 	"github.com/nnutter/constable/internal/driver"
 )
 
@@ -15,5 +19,17 @@ import (
 var version string
 
 func main() {
-	driver.Main(version, nonmutating.Analyzer, methodical.Analyzer, predicates.Analyzer, testify.Analyzer, complexity.Analyzer)
+	driver.Main(
+		version,
+		driver.Hooks{AfterLoad: nilaway.UseMainModules},
+		nonmutating.Analyzer,
+		methodical.Analyzer,
+		predicates.Analyzer,
+		testify.Analyzer,
+		complexity.Analyzer,
+		errcheck.Analyzer,
+		sumtype.Analyzer,
+		testifylint.Analyzer,
+		nilaway.Analyzer,
+	)
 }

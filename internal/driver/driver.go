@@ -25,6 +25,8 @@ import (
 	"golang.org/x/tools/go/analysis/checker"
 	"golang.org/x/tools/go/analysis/unitchecker"
 	"golang.org/x/tools/go/packages"
+
+	"github.com/nnutter/constable/internal/generated"
 )
 
 // Options controls driver output.
@@ -34,6 +36,21 @@ type Options struct {
 	IncludeTests bool
 	Fix          bool
 	Diff         bool
+
+	// AfterLoad runs with the packages that the driver loaded, before any
+	// analyzer runs. A flag whose default names a package is set here, because
+	// only the loaded packages know which packages the run covers.
+	//
+	// Main copies Hooks.AfterLoad here, so Run and its fix passes call the
+	// same hook.
+	AfterLoad func(roots []*packages.Package)
+}
+
+// Hooks are the steps that a command supplies to the driver.
+type Hooks struct {
+	// AfterLoad runs with the packages that the driver loaded, before any
+	// analyzer runs.
+	AfterLoad func(roots []*packages.Package)
 }
 
 type triState int
@@ -106,7 +123,7 @@ func isShortVersion(v versionValue) bool {
 // Main is the main function for the constable command.
 // version is the release version injected at build time via
 // -ldflags "-X main.version=..."; when empty, the embedded build info is used.
-func Main(version string, analyzers ...*analysis.Analyzer) {
+func Main(version string, hooks Hooks, analyzers ...*analysis.Analyzer) {
 	progname := filepath.Base(os.Args[0])
 	log.SetFlags(0)
 	log.SetPrefix(progname + ": ")
@@ -118,20 +135,16 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 	var opts Options
 	opts.IncludeTests = true
 	opts.Context = -1
+	opts.AfterLoad = hooks.AfterLoad
 
 	enabled := make(map[*analysis.Analyzer]*triState)
 	for _, a := range analyzers {
 		enable := new(triState)
 		flag.Var(enable, a.Name, fmt.Sprintf("enable %q analysis", a.Name))
 		enabled[a] = enable
-
-		a.Flags.VisitAll(func(f *flag.Flag) {
-			name := a.Name + "." + f.Name
-			if flag.Lookup(name) == nil {
-				flag.Var(f.Value, name, f.Usage)
-			}
-		})
 	}
+
+	registerFlags(flag.CommandLine, analyzers)
 
 	printFlags := flag.Bool("flags", false, "print analyzer flags in JSON")
 	var showVersion versionValue
@@ -141,8 +154,11 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 	flag.BoolVar(&opts.Fix, "fix", false, "apply all suggested fixes")
 	flag.BoolVar(&opts.Diff, "diff", false, "with -fix, don't update the files, but print a unified diff")
 	flag.BoolVar(&opts.IncludeTests, "test", true, "indicates whether test files should be analyzed, too")
+	includeGenerated := flag.Bool("include-generated", false, "report in generated files, which constable skips by default")
 
 	flag.Parse()
+
+	generated.Include(*includeGenerated)
 
 	if *printFlags {
 		writeFlagsJSON()
@@ -172,6 +188,45 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 	}
 
 	os.Exit(Run(args, analyzers, opts))
+}
+
+// afterLoad runs the hook that the command supplied, if any.
+func (opts Options) afterLoad(roots []*packages.Package) {
+	if opts.AfterLoad != nil {
+		opts.AfterLoad(roots)
+	}
+}
+
+// registerFlags registers the flags of each analyzer in the requirement graph
+// of analyzers under the "<analyzer>.<flag>" names. A required analyzer
+// carries configuration that its dependents read, so the flags of a required
+// analyzer must reach the command line even though only the roots have an
+// enable flag.
+func registerFlags(fs *flag.FlagSet, analyzers []*analysis.Analyzer) {
+	seen := make(map[*analysis.Analyzer]bool)
+	for _, a := range analyzers {
+		registerAnalyzerFlags(fs, a, seen)
+	}
+}
+
+// registerAnalyzerFlags registers the flags of a and of the analyzers it
+// requires.
+func registerAnalyzerFlags(fs *flag.FlagSet, a *analysis.Analyzer, seen map[*analysis.Analyzer]bool) {
+	if seen[a] {
+		return
+	}
+	seen[a] = true
+
+	a.Flags.VisitAll(func(f *flag.Flag) {
+		name := a.Name + "." + f.Name
+		if fs.Lookup(name) == nil {
+			fs.Var(f.Value, name, f.Usage)
+		}
+	})
+
+	for _, req := range a.Requires {
+		registerAnalyzerFlags(fs, req, seen)
+	}
 }
 
 func succeeded(ok bool) bool {
@@ -389,14 +444,29 @@ func writeHelp(progname string, analyzers []*analysis.Analyzer, args []string) {
 	for _, a := range analyzers {
 		if a.Name == args[0] {
 			_, _ = fmt.Fprintf(os.Stdout, "%s: %s\n", a.Name, a.Doc)
-			a.Flags.VisitAll(func(f *flag.Flag) {
-				_, _ = fmt.Fprintf(os.Stdout, "-%s.%s: %s\n", a.Name, f.Name, f.Usage)
-			})
+			writeAnalyzerFlags(a, make(map[*analysis.Analyzer]bool))
 			return
 		}
 	}
 	fmt.Fprintf(os.Stderr, "unknown analyzer %q\n", args[0])
 	os.Exit(1)
+}
+
+// writeAnalyzerFlags writes the flags of a and of the analyzers it requires,
+// because a required analyzer carries configuration that a reads.
+func writeAnalyzerFlags(a *analysis.Analyzer, seen map[*analysis.Analyzer]bool) {
+	if seen[a] {
+		return
+	}
+	seen[a] = true
+
+	a.Flags.VisitAll(func(f *flag.Flag) {
+		_, _ = fmt.Fprintf(os.Stdout, "-%s.%s: %s\n", a.Name, f.Name, f.Usage)
+	})
+
+	for _, req := range a.Requires {
+		writeAnalyzerFlags(req, seen)
+	}
 }
 
 // Run loads the packages and applies the analyzers, printing
@@ -423,6 +493,8 @@ func Run(args []string, analyzers []*analysis.Analyzer, opts Options) (exitcode 
 		exitAtLeast(1)
 		return exitcode
 	}
+
+	opts.afterLoad(initial)
 
 	if n := packages.PrintErrors(initial); n > 0 {
 		exitAtLeast(1)
@@ -489,7 +561,7 @@ func runFixes(args []string, analyzers []*analysis.Analyzer, opts Options, cwd s
 		overlay := state
 		var sources map[*token.File][]byte
 		var err error
-		graph, sources, err = analyzeFixPass(args, analyzers, opts.IncludeTests, overlay)
+		graph, sources, err = analyzeFixPass(args, analyzers, opts, overlay)
 		if err != nil {
 			log.Print(err)
 			return 1
@@ -537,14 +609,17 @@ func fixPassLimit(sources map[*token.File][]byte) int {
 	return max(1000, size)
 }
 
-func analyzeFixPass(args []string, analyzers []*analysis.Analyzer, includeTests bool, overlay map[string][]byte) (*checker.Graph, map[*token.File][]byte, error) {
-	initial, sources, err := load(args, includeTests, needFacts(analyzers), overlay)
+func analyzeFixPass(args []string, analyzers []*analysis.Analyzer, opts Options, overlay map[string][]byte) (*checker.Graph, map[*token.File][]byte, error) {
+	initial, sources, err := load(args, opts.IncludeTests, needFacts(analyzers), overlay)
 	if err != nil {
 		return nil, nil, err
 	}
 	if packages.PrintErrors(initial) > 0 {
 		return nil, nil, fmt.Errorf("package loading failed")
 	}
+
+	opts.afterLoad(initial)
+
 	graph, err := checker.Analyze(overlayAnalyzers(analyzers, overlay), initial, &checker.Options{})
 	return graph, sources, err
 }
@@ -558,7 +633,8 @@ func outputFinalFixes(original, state map[string][]byte, cwd string, diff bool) 
 }
 
 func prepareFixPass(files map[string]*fixFile, original, state map[string][]byte) (map[string][]byte, bool, error) {
-	next := maps.Clone(state)
+	next := make(map[string][]byte, len(state))
+	maps.Copy(next, state)
 	changed := false
 	for name, file := range files {
 		if err := prepareFixFile(name, file); err != nil {

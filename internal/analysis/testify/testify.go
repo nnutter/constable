@@ -47,7 +47,7 @@ var testifyPackages = map[string]string{
 
 func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
-		if generated.IsGenerated(file) {
+		if generated.Skipped(file) {
 			continue
 		}
 
