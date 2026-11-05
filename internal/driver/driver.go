@@ -34,6 +34,21 @@ type Options struct {
 	IncludeTests bool
 	Fix          bool
 	Diff         bool
+
+	// AfterLoad runs with the packages that the driver loaded, before any
+	// analyzer runs. A flag whose default names a package is set here, because
+	// only the loaded packages know which packages the run covers.
+	//
+	// Main copies Hooks.AfterLoad here, so Run and its fix passes call the
+	// same hook.
+	AfterLoad func(roots []*packages.Package)
+}
+
+// Hooks are the steps that a command supplies to the driver.
+type Hooks struct {
+	// AfterLoad runs with the packages that the driver loaded, before any
+	// analyzer runs.
+	AfterLoad func(roots []*packages.Package)
 }
 
 type triState int
@@ -106,7 +121,7 @@ func isShortVersion(v versionValue) bool {
 // Main is the main function for the constable command.
 // version is the release version injected at build time via
 // -ldflags "-X main.version=..."; when empty, the embedded build info is used.
-func Main(version string, analyzers ...*analysis.Analyzer) {
+func Main(version string, hooks Hooks, analyzers ...*analysis.Analyzer) {
 	progname := filepath.Base(os.Args[0])
 	log.SetFlags(0)
 	log.SetPrefix(progname + ": ")
@@ -118,6 +133,7 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 	var opts Options
 	opts.IncludeTests = true
 	opts.Context = -1
+	opts.AfterLoad = hooks.AfterLoad
 
 	enabled := make(map[*analysis.Analyzer]*triState)
 	for _, a := range analyzers {
@@ -167,6 +183,13 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 	}
 
 	os.Exit(Run(args, analyzers, opts))
+}
+
+// afterLoad runs the hook that the command supplied, if any.
+func (opts Options) afterLoad(roots []*packages.Package) {
+	if opts.AfterLoad != nil {
+		opts.AfterLoad(roots)
+	}
 }
 
 // registerFlags registers the flags of each analyzer in the requirement graph
@@ -466,6 +489,8 @@ func Run(args []string, analyzers []*analysis.Analyzer, opts Options) (exitcode 
 		return exitcode
 	}
 
+	opts.afterLoad(initial)
+
 	if n := packages.PrintErrors(initial); n > 0 {
 		exitAtLeast(1)
 	}
@@ -531,7 +556,7 @@ func runFixes(args []string, analyzers []*analysis.Analyzer, opts Options, cwd s
 		overlay := state
 		var sources map[*token.File][]byte
 		var err error
-		graph, sources, err = analyzeFixPass(args, analyzers, opts.IncludeTests, overlay)
+		graph, sources, err = analyzeFixPass(args, analyzers, opts, overlay)
 		if err != nil {
 			log.Print(err)
 			return 1
@@ -579,14 +604,17 @@ func fixPassLimit(sources map[*token.File][]byte) int {
 	return max(1000, size)
 }
 
-func analyzeFixPass(args []string, analyzers []*analysis.Analyzer, includeTests bool, overlay map[string][]byte) (*checker.Graph, map[*token.File][]byte, error) {
-	initial, sources, err := load(args, includeTests, needFacts(analyzers), overlay)
+func analyzeFixPass(args []string, analyzers []*analysis.Analyzer, opts Options, overlay map[string][]byte) (*checker.Graph, map[*token.File][]byte, error) {
+	initial, sources, err := load(args, opts.IncludeTests, needFacts(analyzers), overlay)
 	if err != nil {
 		return nil, nil, err
 	}
 	if packages.PrintErrors(initial) > 0 {
 		return nil, nil, fmt.Errorf("package loading failed")
 	}
+
+	opts.afterLoad(initial)
+
 	graph, err := checker.Analyze(overlayAnalyzers(analyzers, overlay), initial, &checker.Options{})
 	return graph, sources, err
 }

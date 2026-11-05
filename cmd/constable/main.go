@@ -21,6 +21,7 @@ var version string
 func main() {
 	driver.Main(
 		version,
+		driver.Hooks{},
 		nonmutating.Analyzer,
 		methodical.Analyzer,
 		predicates.Analyzer,
