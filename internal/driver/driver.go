@@ -125,12 +125,7 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 		flag.Var(enable, a.Name, fmt.Sprintf("enable %q analysis", a.Name))
 		enabled[a] = enable
 
-		a.Flags.VisitAll(func(f *flag.Flag) {
-			name := a.Name + "." + f.Name
-			if flag.Lookup(name) == nil {
-				flag.Var(f.Value, name, f.Usage)
-			}
-		})
+		registerAnalyzerFlags(flag.CommandLine, a)
 	}
 
 	printFlags := flag.Bool("flags", false, "print analyzer flags in JSON")
@@ -172,6 +167,17 @@ func Main(version string, analyzers ...*analysis.Analyzer) {
 	}
 
 	os.Exit(Run(args, analyzers, opts))
+}
+
+// registerAnalyzerFlags registers the flags of a under the "<analyzer>.<flag>"
+// names, so that two analyzers can each hold a flag with the same name.
+func registerAnalyzerFlags(fs *flag.FlagSet, a *analysis.Analyzer) {
+	a.Flags.VisitAll(func(f *flag.Flag) {
+		name := a.Name + "." + f.Name
+		if fs.Lookup(name) == nil {
+			fs.Var(f.Value, name, f.Usage)
+		}
+	})
 }
 
 func succeeded(ok bool) bool {
