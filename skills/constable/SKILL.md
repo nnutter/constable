@@ -6,153 +6,124 @@ description: Use constable to check that annotated Go functions and methods do n
 # Go Constable
 
 `constable` is a Go static analysis tool for opt-in non-mutation checks.
-
-Use it when a function or method should read its inputs without changing state that the caller can observe.
+Use it when a function or method must read its inputs without changing state that the caller can observe.
 The check does not guarantee that the function is pure or free of all side effects.
 
 ## Installation and invocation
 
-Install the released command with:
+Install the released command, then run it from the module root,
 
 ```sh
 go install github.com/nnutter/constable/cmd/constable@latest
-```
-
-Run it against the packages in a module:
-
-```sh
 constable ./...
 ```
 
-The command reports diagnostics and exits unsuccessfully when an annotated function violates the contract.
-An invocation with no diagnostics succeeds silently.
+Each diagnostic has the form `file:line:col: message` and goes to stderr.
+Exit status `0` means no diagnostic, `3` means at least one diagnostic, and `1` means constable failed.
+An invocation that finds no diagnostic succeeds silently.
+
+Further flags:
+
+- `-json` prints JSON and always exits `0`.
+- `-c N` prints N lines of source around each reported line.
+- `-fix` writes the fixes, and `-fix -diff` prints them as a diff and writes nothing.
+- `-<analyzer>=false` turns off one analyzer, for example `-complexity=false`.
+- `-flags` lists every flag, and `help <analyzer>` describes one analyzer.
+
+A file that carries the generated-code comment `// Code generated ... DO NOT EDIT.` is skipped, because the next run of the generator overwrites it.
+Change such a file through its generator.
+`-include-generated` reports in it anyway.
 
 ## Annotating Go code
 
 Put the exact directive `//constable:nonmutating` immediately before the function or method declaration.
-There must not be a space between `//` and `constable:`.
+Do not put a space between `//` and `constable:`.
 
 ```go
 //constable:nonmutating
 func ReadValue(p *int) int {
- return *p
+	return *p
 }
 ```
 
 The directive applies to functions and methods only.
-Do not add it to a function that is intentionally allowed to mutate caller-visible state.
+Do not add it to a function that must change caller-visible state.
 
-## Mutations that must be avoided
+## Reported mutations
 
-The analyzer reports direct mutations through pointer, slice, and map parameters.
-It also reports mutations through pointer receivers and through reference-like fields of value receivers.
+The analyzer reports these writes:
+
+- A write through a pointer parameter or a pointer receiver, such as `*p = 1`.
+- A write to a slice element, a map entry, or a field that the parameter reaches.
+- `delete` on a map parameter.
+- A write to a reference-like field of a value receiver, such as a slice field.
+- The same writes through an alias that a local variable holds.
 
 ```go
-//constable:nonmutating
-func WriteValue(p *int) {
- *p = 1 // reported
-}
-
-//constable:nonmutating
-func WriteSlice(values []int) {
- values[0] = 1 // reported
-}
-
-//constable:nonmutating
-func WriteMap(values map[string]int) {
- values["key"] = 1 // reported
-}
-
-//constable:nonmutating
-func DeleteMapEntry(values map[string]int) {
- delete(values, "key") // reported
-}
-
-type Buffer struct {
- data []byte
-}
+type Buffer struct{ data []byte }
 
 //constable:nonmutating
 func (b Buffer) ClearFirstByte() {
- b.data[0] = 0 // reported: b.data shares caller-visible backing storage
+	b.data[0] = 0 // b.data shares the caller's backing array
 }
 ```
 
-Aliases of parameters are also checked when the alias is assigned to a local variable.
-Nested reference-like values, such as a slice of slices, are considered caller-visible when mutated.
+Nested references count too, such as a write to an element of a slice of slices.
 
-## Code that is allowed
+## Allowed code
 
-Reassigning a parameter does not mutate the value held by the caller.
-Mutating a local variable or a pointer to a local variable is also allowed.
-A value receiver may mutate its scalar fields because those fields belong to the receiver copy.
+- A new value for the parameter itself, such as `p = nil`.
+- A write to a local variable, or to memory that the function allocates.
+- A scalar field write on a value receiver, because that field belongs to the receiver copy.
 
 ```go
-//constable:nonmutating
-func ReassignParameter(p *int) {
- p = nil // allowed
-}
-
-//constable:nonmutating
-func MutateLocal() int {
- value := 0
- value++ // allowed
- return value
-}
-
-type Count struct {
- n int
-}
+type Count struct{ n int }
 
 //constable:nonmutating
 func (c Count) Increment() Count {
- c.n++ // allowed: c is a value-receiver copy
- return c
+	c.n++ // c is the receiver copy
+	return c
 }
 ```
 
 ## Predicates
 
-The predicates analyzer reports `&&` and `||` operands, except the first, that are not predicate-function calls.
-The first operand always executes, so coverage observes short-circuiting through the rest.
+The predicates analyzer reports `&&` and `||` operands, except the first, that are not calls to a predicate function.
+The first operand always runs, so coverage observes short-circuiting through the operands that follow.
 
 ```go
 func F(a, b bool) {
- if a && b { // reported: use a && isB()
- }
+	if a && b { // reported: use a && isB()
+	}
 }
 
 func isB() bool { return false }
 
 func G(a bool) {
- if a && isB() { // allowed
- }
+	if a && isB() { // allowed
+	}
 }
 ```
 
-The check covers `if` and `for` conditions and bool assignments such as `c := a && b`, including `!a`, field and map access, and comparisons.
-Operands that are already calls, compound expressions, or `true`/`false`/`nil` are allowed.
+The check covers `if` and `for` conditions and bool assignments such as `c := a && b`.
+It accepts an operand that is a call, a compound expression, a negated call, or `true`, `false`, or `nil`.
 
-## Agent workflow
+## Workflow
 
-1. Identify functions and methods whose API contract should not mutate caller-owned data.
-1. Add `//constable:nonmutating` immediately before each eligible declaration.
-1. Run `constable ./...` from the Go module root.
-1. For every diagnostic, either remove the caller-visible mutation or remove the annotation if the contract is incorrect.
-1. Re-run the analyzer and the package tests before finalizing the change.
+1. Identify the functions and methods whose contract must not change caller-owned data.
+1. Add `//constable:nonmutating` immediately before each of them.
+1. Run `constable ./...`.
+1. For each diagnostic, remove the caller-visible mutation, or delete the directive when the contract is wrong.
+1. Re-run constable and the package tests before you finalize the change.
 
-Prefer returning a new value or making a defensive copy when the implementation needs to transform caller-provided data.
-Do not silence a diagnostic by merely reassigning a parameter while continuing to mutate data reachable through it.
+Prefer a new return value or a defensive copy when the implementation must transform caller-provided data.
+Do not hide a diagnostic by assigning a new value to the parameter while the code still writes through it.
 
-## Scope and limitations
+## Scope and limits
 
-The check is focused on direct, intra-procedural mutations represented by assignments, increments, slice or map indexing, and `delete`.
-It is not a general immutability checker.
-It does not by itself guarantee that a function has no I/O, global state changes, goroutines, reflection, unsafe operations, or other side effects.
-Calls to helper functions, interface methods, function values, and other indirect mutation paths may not be modeled.
-The analyzer currently recognizes only the `nonmutating` directive.
+The check finds direct writes in one function body: assignment, `++`, `--`, index writes, field writes, and `delete`.
+It does not model a call to a helper function, a write through `append`, or an indirect path such as an interface method or a function value.
+The analyzer recognizes only the `nonmutating` directive, and it is not a general immutability checker.
+It does not by itself guarantee that a function has no I/O, global state changes, goroutines, reflection, or unsafe operations.
 
-The analyzers skip files that carry the standard generated-code comment, `// Code generated ... DO NOT EDIT.`.
-Edit such a file through its generator, not by hand.
-
-When behavior is uncertain, inspect the diagnostic and the implementation rather than assuming that a clean run proves complete immutability.
+When a run is clean, inspect the implementation before you claim that it is fully non-mutating.
