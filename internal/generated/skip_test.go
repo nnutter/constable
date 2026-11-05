@@ -32,3 +32,10 @@ var reportFuncs = &analysis.Analyzer{
 func TestSkip(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), generated.Skip(reportFuncs), "g")
 }
+
+func TestSkipWithInclude(t *testing.T) {
+	generated.Include(true)
+	t.Cleanup(func() { generated.Include(false) })
+
+	analysistest.Run(t, analysistest.TestData(), generated.Skip(reportFuncs), "h")
+}

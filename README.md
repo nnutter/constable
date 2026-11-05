@@ -23,6 +23,11 @@ constable ./...
 
 constable skips files that carry the standard generated-code comment, `// Code generated ... DO NOT EDIT.`.
 A diagnostic in such a file is not actionable because the next run of the generator overwrites the file.
+Set `-include-generated` to report in them anyway,
+
+```sh
+constable -include-generated ./...
+```
 
 ## Example
 

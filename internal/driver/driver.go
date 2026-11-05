@@ -25,6 +25,8 @@ import (
 	"golang.org/x/tools/go/analysis/checker"
 	"golang.org/x/tools/go/analysis/unitchecker"
 	"golang.org/x/tools/go/packages"
+
+	"github.com/nnutter/constable/internal/generated"
 )
 
 // Options controls driver output.
@@ -152,8 +154,11 @@ func Main(version string, hooks Hooks, analyzers ...*analysis.Analyzer) {
 	flag.BoolVar(&opts.Fix, "fix", false, "apply all suggested fixes")
 	flag.BoolVar(&opts.Diff, "diff", false, "with -fix, don't update the files, but print a unified diff")
 	flag.BoolVar(&opts.IncludeTests, "test", true, "indicates whether test files should be analyzed, too")
+	includeGenerated := flag.Bool("include-generated", false, "report in generated files, which constable skips by default")
 
 	flag.Parse()
+
+	generated.Include(*includeGenerated)
 
 	if *printFlags {
 		writeFlagsJSON()
