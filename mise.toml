@@ -38,6 +38,19 @@ tombi = "latest"
 uv = "latest"
 yamlfmt = "latest"
 
+[tasks.upgrade]
+description = "Upgrade the tools to their newest releases"
+run = [
+  "mise upgrade",
+  # The tools of this repository wait for the age of the setting, so they
+  # need the age of zero to leave the queue.
+  "mise upgrade --minimum-release-age 0 github:nnutter/timber@latest",
+  "mise upgrade --minimum-release-age 0 github:nnutter/mdlint@latest",
+  "mise lock --minimum-release-age 0 github:nnutter/timber@latest",
+  "mise lock --minimum-release-age 0 github:nnutter/mdlint@latest",
+  "mise lock",
+]
+
 [tasks.all]
 description = "Run fix, test, and check"
 run = [{ task = "fix" }, { task = "test" }, { task = "check" }]
