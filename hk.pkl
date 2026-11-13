@@ -2,13 +2,13 @@
 // nnutter/hk-config. The hk-config version must target the hk pin in
 // mise.toml, and the revision is the newest one released for that hk version.
 amends
-  "package://github.com/nnutter/hk-config/releases/download/v2.11.1-2/hk-config@2.11.1-2#/Config.pkl"
+  "package://github.com/nnutter/hk-config/releases/download/v2.12.0-0/hk-config@2.12.0-0#/Config.pkl"
 
 import
-  "package://github.com/nnutter/hk-config/releases/download/v2.11.1-2/hk-config@2.11.1-2#/Builtins.pkl"
+  "package://github.com/nnutter/hk-config/releases/download/v2.12.0-0/hk-config@2.12.0-0#/Builtins.pkl"
   as Extra
 import
-  "package://github.com/nnutter/hk-config/releases/download/v2.11.1-2/hk-config@2.11.1-2#/Hooks.pkl"
+  "package://github.com/nnutter/hk-config/releases/download/v2.12.0-0/hk-config@2.12.0-0#/Hooks.pkl"
   as Hooks
 
 /// Test fixtures hold deliberately invalid input for the tests that read them.
@@ -28,7 +28,7 @@ local const constableDev = (Extra.constable) {
 // `go`, `toml`, `yaml`, and `agentskills` are the groups this repository needs.
 //
 // A replaced step is a new step, so the template's order does not reach it: the
-// go group runs constable after testifylint, and the replacement keeps that
+// go group runs constable after go_fix, and the replacement keeps that
 // place in the hooks that fix.
 hooks = (Hooks.all(List("go", "toml", "yaml", "agentskills"))) {
   ["check"] {
@@ -38,12 +38,12 @@ hooks = (Hooks.all(List("go", "toml", "yaml", "agentskills"))) {
   }
   ["fix"] {
     steps {
-      ["constable"] = (constableDev) { depends = List("testifylint") }
+      ["constable"] = (constableDev) { depends = List("go_fix") }
     }
   }
   ["pre-commit"] {
     steps {
-      ["constable"] = (constableDev) { depends = List("testifylint") }
+      ["constable"] = (constableDev) { depends = List("go_fix") }
     }
   }
 }

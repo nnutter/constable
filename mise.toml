@@ -17,7 +17,7 @@ jactionlint = "latest"
 "github:nnutter/mdlint" = "latest"
 "github:nnutter/timber" = "latest"
 "github:securego/gosec" = "latest"
-gitleaks = "latest"
+betterleaks = "latest"
 go = "latest"
 "go:github.com/kisielk/errcheck" = "latest"
 "go:github.com/kojah/gohawk" = "latest"
@@ -26,17 +26,29 @@ go = "latest"
 "go:golang.org/x/tools/cmd/goimports" = "latest"
 "go:golang.org/x/vuln/cmd/govulncheck" = "latest"
 gofumpt = "latest"
-hk = "2.11.1"
+hk = "2.12.0"
 pkl = "latest"
 "pypi:agentskills-tools" = "latest"
-# Python stays on the release that mise.lock records: agentskills-tools needs
-# pyyaml, and pyyaml 6.0.3 has no CPython 3.15 wheel, so the pypi backend,
-# which installs with --no-build, fails on the 3.15 that latest resolves to.
-python = "latest"
+# agentskills-tools needs pyyaml, which has no CPython 3.15 wheel.
+# Keep upgrades on 3.14 because the pypi backend installs with --no-build.
+python = "3.14"
 staticcheck = "latest"
 tombi = "latest"
 uv = "latest"
 yamlfmt = "latest"
+
+[tasks.upgrade]
+description = "Upgrade the tools to their newest releases"
+run = [
+  "mise upgrade",
+  # The tools of this repository wait for the age of the setting, so they
+  # need the age of zero to leave the queue.
+  "mise upgrade --minimum-release-age 0 github:nnutter/timber@latest",
+  "mise upgrade --minimum-release-age 0 github:nnutter/mdlint@latest",
+  "mise lock --minimum-release-age 0 github:nnutter/timber@latest",
+  "mise lock --minimum-release-age 0 github:nnutter/mdlint@latest",
+  "mise lock",
+]
 
 [tasks.all]
 description = "Run fix, test, and check"
