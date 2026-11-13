@@ -41,3 +41,35 @@ func ComplexityExceedsLimit(name string, complexity, limit int) string {
 func UsePredicateInstead(expr string) string {
 	return fmt.Sprintf("use predicate function instead of %q in compound conditional", expr)
 }
+
+func PureMutatesPointerParameter(name string) string {
+	return fmt.Sprintf("//constable:pure function mutates pointer parameter %s", name)
+}
+
+func PureMutatesReceiver(name string) string {
+	return fmt.Sprintf("//constable:pure method mutates receiver %s", name)
+}
+
+func PureMutatesParameter(name string) string {
+	return fmt.Sprintf("//constable:pure function mutates parameter %s", name)
+}
+
+func PureDeletesFromMapParameter(name string) string {
+	return fmt.Sprintf("//constable:pure function deletes from map parameter %s", name)
+}
+
+func PureSpawnsGoroutine() string {
+	return "//constable:pure function spawns goroutine"
+}
+
+func PureWritesGlobal(name string) string {
+	return fmt.Sprintf("//constable:pure function writes global %s", name)
+}
+
+func PureCalls(qualified string) string {
+	return fmt.Sprintf("//constable:pure function calls %s", qualified)
+}
+
+func PureReadsVar(qualified string) string {
+	return fmt.Sprintf("//constable:pure function reads %s", qualified)
+}

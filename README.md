@@ -29,6 +29,32 @@ Set `-include-generated` to report in them anyway,
 constable -include-generated ./...
 ```
 
+## Pure
+
+The pure analyzer checks functions annotated with `//constable:pure`.
+A pure function has no observable effect beyond its return values.
+It forbids every caller-visible mutation that the nonmutating analyzer forbids, and also forbids package-global writes, `go` spawns, and calls that read the clock, random, environment, or perform I/O.
+
+```go
+//constable:pure
+func F(p *int) int {
+	return *p // allowed: read only
+}
+
+//constable:pure
+func G() {
+	// reported: reads the clock
+	_ = time.Now()
+}
+```
+
+A pure function that reads a global is allowed.
+A pure function that writes a global is reported.
+
+The banned calls are `time.Now` and friends, any `math/rand` call, `os` environment and file calls (except error predicates), `fmt` and `log` printing, and the `print` and `println` builtins.
+Reads of `os.Args` and `time.Local` are reported too.
+Pure functions are deterministic given their arguments, so they are safe to reorder, parallelize, or test without flaky setup.
+
 ## Example
 
 This function is reported because it mutates through a pointer parameter,
