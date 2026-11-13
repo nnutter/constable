@@ -73,3 +73,19 @@ func PureCalls(qualified string) string {
 func PureReadsVar(qualified string) string {
 	return fmt.Sprintf("//constable:pure function reads %s", qualified)
 }
+
+func UnusedFunction(name string) string {
+	return fmt.Sprintf("unused unexported function %s is never used", name)
+}
+
+func UnusedType(name string) string {
+	return fmt.Sprintf("unused unexported type %s is never used", name)
+}
+
+func UnusedVariable(name string) string {
+	return fmt.Sprintf("unused unexported variable %s is never used", name)
+}
+
+func UnusedConstant(name string) string {
+	return fmt.Sprintf("unused unexported constant %s is never used", name)
+}

@@ -1,0 +1,8 @@
+package fix
+
+func helper() {}
+
+// Keep exercises the used helper.
+func Keep() {
+	helper()
+}

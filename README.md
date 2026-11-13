@@ -126,6 +126,21 @@ if a && isB() { // allowed
 
 The check also covers `for` conditions and bool assignments such as `c := a && b`, including negated variables, field and map access, and comparisons.
 
+## Lean
+
+The lean analyzer reports unused unexported declarations: functions, types, variables, and constants that nothing in the package references.
+Deleting dead declarations keeps the package small, so readers and agents hold less context in mind.
+
+```go
+// reported: nothing calls unused
+func unused() {}
+```
+
+The check stays precise on purpose.
+Methods, struct fields, unused parameters, and exported symbols are not reported.
+Constants in a group that uses `iota` or hides a value are not reported either, because removing one member would renumber the rest.
+Unused parameters may exist to satisfy an interface, and exported symbols may be used outside the package, so package-local evidence cannot prove either one dead.
+
 ## Fixes
 
 `-fix` applies the fixes that the analyzers suggest, and `-fix -diff` prints the change instead of writing it.
@@ -135,8 +150,9 @@ constable -fix ./...
 constable -fix -diff ./...
 ```
 
-Only the methodical analyzer suggests fixes today.
-It places every method of a reported type directly after the type declaration, in order, and a method that lives in another file moves into the file that declares its type.
+The methodical and lean analyzers suggest fixes.
+Methodical places every method of a reported type directly after the type declaration, in order, and a method that lives in another file moves into the file that declares its type.
+Lean deletes unused unexported declarations and removes imports that only the deleted declaration used.
 
 A move fixes the import blocks of both files:
 

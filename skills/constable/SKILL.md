@@ -82,6 +82,27 @@ Repair it in this order:
 
 The pure contract section below lists the effects that count.
 
+### lean
+
+```text
+unused unexported function helper is never used
+unused unexported type buffer is never used
+unused unexported variable counter is never used
+unused unexported constant limit is never used
+```
+
+Run the fix,
+
+```sh
+constable -fix -diff ./...   # read the change
+constable -fix ./...         # write the change
+```
+
+The fix deletes the reported declaration, including its doc comment, and removes imports that only the deleted declaration used.
+
+Delete the declaration by hand when the fix skips it.
+The fix skips a generated file, a file with build constraints or Go directives, a file that uses cgo, a file whose import block holds comments, a file with comments that no declaration owns, a declaration that does not start its own line, and a single constant from a grouped block.
+
 ### methodical
 
 ```text
@@ -289,3 +310,11 @@ It does not check `net`, `io.Writer` implementations, reflection, `unsafe`, `cgo
 The analyzer recognizes only the `pure` directive.
 
 When a run is clean, inspect the implementation before you claim that it is fully pure.
+
+The lean check finds package-local unused declarations only: unexported functions, types, variables, and constants.
+It does not report methods, struct fields, unused parameters, exported symbols, or constants in a group that uses `iota` or hides a value.
+Unused parameters may exist to satisfy an interface, and exported symbols may be used in another package, so package-local evidence cannot prove either one dead.
+A symbol referenced in any file of the package, including via `var _ = x`, counts as used.
+Entry points `init` and `main` are never reported.
+
+When a run is clean, the package still holds exported surface that only a whole-program search can judge.
