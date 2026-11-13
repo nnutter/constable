@@ -31,7 +31,7 @@ func Parse(comment string) ([]Check, error) {
 	var checks []Check
 	for _, key := range keys(tag) {
 		switch enum.ParseCheckType(key).(type) {
-		case enum.Nonmutating:
+		case enum.Nonmutating, enum.Pure:
 			checks = append(checks, Check{Name: key, Config: tag.Get(key)})
 			continue
 		}
@@ -49,6 +49,21 @@ func HasNonmutating(comment string) bool {
 
 	for _, check := range checks {
 		if check.Name == enum.NonmutatingName {
+			return true
+		}
+	}
+
+	return false
+}
+
+func HasPure(comment string) bool {
+	checks, err := Parse(comment)
+	if err != nil {
+		return false
+	}
+
+	for _, check := range checks {
+		if check.Name == enum.PureName {
 			return true
 		}
 	}

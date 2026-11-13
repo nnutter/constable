@@ -23,6 +23,13 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
+			name:    "pure tag",
+			comment: "//constable:pure",
+			want: []directive.Check{
+				{Name: "pure"},
+			},
+		},
+		{
 			name:    "not a constable tag",
 			comment: "//go:noinline",
 		},
@@ -59,4 +66,10 @@ func TestParseErrors(t *testing.T) {
 func TestHasNonmutating(t *testing.T) {
 	assert.True(t, directive.HasNonmutating("//constable:nonmutating"))
 	assert.False(t, directive.HasNonmutating("//go:noinline"))
+}
+
+func TestHasPure(t *testing.T) {
+	assert.True(t, directive.HasPure("//constable:pure"))
+	assert.False(t, directive.HasPure("//constable:nonmutating"))
+	assert.False(t, directive.HasPure("//go:noinline"))
 }

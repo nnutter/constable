@@ -60,6 +60,49 @@ Repair it in this order:
 Do not hide a diagnostic by assigning a new value to the parameter.
 Prefer the copy or the new value.
 
+### pure
+
+```text
+//constable:pure function mutates pointer parameter p
+//constable:pure function writes global counter
+//constable:pure function spawns goroutine
+//constable:pure function calls time.Now
+//constable:pure function calls fmt.Println
+//constable:pure function reads os.Args
+```
+
+`//constable:pure` is the non-mutating contract plus determinism.
+It forbids every write the `nonmutating` check forbids, and also forbids package-global writes, `go` spawns, and calls that read the clock, random, environment, or perform I/O.
+Repair it in this order:
+
+1. Move the effect to the caller.
+   Pass the clock, random source, or environment value in as a parameter, or return the value instead of printing it.
+   Write through the parameter value the caller passed, not through a global.
+1. Delete the directive when the function must have an observable effect, because the contract is wrong for that function.
+
+The pure contract section below lists the effects that count.
+
+### lean
+
+```text
+unused unexported function helper is never used
+unused unexported type buffer is never used
+unused unexported variable counter is never used
+unused unexported constant limit is never used
+```
+
+Run the fix,
+
+```sh
+constable -fix -diff ./...   # read the change
+constable -fix ./...         # write the change
+```
+
+The fix deletes the reported declaration, including its doc comment, and removes imports that only the deleted declaration used.
+
+Delete the declaration by hand when the fix skips it.
+The fix skips a generated file, a file with build constraints or Go directives, a file that uses cgo, a file whose import block holds comments, a file with comments that no declaration owns, a declaration that does not start its own line, and a single constant from a grouped block.
+
 ### methodical
 
 ```text
@@ -201,6 +244,49 @@ func (c Count) Increment() Count {
 }
 ```
 
+## The pure contract
+
+`//constable:pure` states that the function or method has no observable effect beyond its return values.
+It includes the non-mutating contract and adds four more rules.
+
+Put the exact directive immediately before the declaration, with no space between `//` and `constable:`.
+
+```go
+//constable:pure
+func Add(a, b int) int {
+	return a + b
+}
+```
+
+The directive applies to functions and methods only.
+
+### Reported effects
+
+- Every write the non-mutating check reports, such as `*p = 1` through a pointer parameter.
+- A write to a package-level variable, such as `counter++`, `globalMap["x"] = 1`, or `delete(globalMap, "x")`.
+- A `go` statement that spawns a goroutine.
+- A call that reads the clock: `time.Now`, `time.Since`, `time.Until`, `time.Sleep`, `time.After`, `time.AfterFunc`, `time.Tick`, `time.NewTicker`, `time.NewTimer`.
+- Any call from `math/rand` or `math/rand/v2`.
+- A call that reads the environment or performs I/O through `os`, except the error predicates `os.IsNotExist`, `os.IsExist`, `os.IsPermission`, `os.IsTimeout`, and the pure accessor `File.Name`.
+- A call that prints through `fmt` (`Print`, `Printf`, `Println`, `Fprint`, `Fprintf`, `Fprintln`) or through `log`, or the builtins `print` and `println`.
+- A read of `os.Args`, `os.Stdout`, `os.Stderr`, `os.Stdin`, or `time.Local`.
+
+```go
+var counter int
+
+//constable:pure
+func Bump() {
+	counter++ // writes global counter
+}
+```
+
+### Allowed code
+
+- Reading a global, such as `return counter`, because a read by itself does not change state.
+- Pure construction and pure queries, such as `time.Date`, `fmt.Sprintf`, `strings.ToUpper`, and `os.IsNotExist`.
+- A write to a local variable or to memory the function allocates.
+- A `panic` and its `recover`, because the panic is part of the function's own control flow.
+
 ## Workflow
 
 1. Identify the functions and methods whose contract must not change caller-owned data.
@@ -217,3 +303,18 @@ It is not a general immutability checker, and it does not by itself guarantee th
 The analyzer recognizes only the `nonmutating` directive.
 
 When a run is clean, inspect the implementation before you claim that it is fully non-mutating.
+
+The pure check finds the effects in the pure contract in one function body.
+It does not model a call to a helper function, so a pure function that calls an impure helper passes until the helper is also checked or the transitive effect is made explicit.
+It does not check `net`, `io.Writer` implementations, reflection, `unsafe`, `cgo`, or assembly, and it does not prove that a function never blocks.
+The analyzer recognizes only the `pure` directive.
+
+When a run is clean, inspect the implementation before you claim that it is fully pure.
+
+The lean check finds package-local unused declarations only: unexported functions, types, variables, and constants.
+It does not report methods, struct fields, unused parameters, exported symbols, or constants in a group that uses `iota` or hides a value.
+Unused parameters may exist to satisfy an interface, and exported symbols may be used in another package, so package-local evidence cannot prove either one dead.
+A symbol referenced in any file of the package, including via `var _ = x`, counts as used.
+Entry points `init` and `main` are never reported.
+
+When a run is clean, the package still holds exported surface that only a whole-program search can judge.
