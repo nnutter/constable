@@ -176,6 +176,8 @@ func checkGitClean(name string) error {
 	pathspec := ":(literal)" + base
 	git := func(args ...string) ([]byte, error) {
 		cmd := exec.Command("git", append([]string{"--no-optional-locks", "-C", dir}, args...)...) // #nosec G204 -- The path is passed as a literal Git pathspec.
+		// -C selects the file's repository. GIT_DIR from git rebase --exec would override it.
+		cmd.Env = gitEnvWithoutRepository(os.Environ())
 		return cmd.Output()
 	}
 	tracked, err := git("ls-files", "-v", "-z", "--", pathspec)
@@ -201,6 +203,29 @@ func checkGitClean(name string) error {
 		return fmt.Errorf("file %s has Git changes", name)
 	}
 	return nil
+}
+
+// git rebase --exec exports GIT_DIR for the repository being rebased and an
+// empty GIT_PREFIX. Git treats both as stronger than -C.
+func gitEnvWithoutRepository(env []string) []string {
+	filtered := make([]string, 0, len(env))
+	for _, entry := range env {
+		key, _, _ := strings.Cut(entry, "=")
+		if gitRepositoryEnv(key) {
+			continue
+		}
+		filtered = append(filtered, entry)
+	}
+	return filtered
+}
+
+func gitRepositoryEnv(key string) bool {
+	switch key {
+	case "GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_OBJECT_DIRECTORY", "GIT_INDEX_FILE", "GIT_NAMESPACE", "GIT_PREFIX":
+		return true
+	default:
+		return false
+	}
 }
 
 func outputFixFile(name string, f *fixFile, cwd string, printDiff bool) error {

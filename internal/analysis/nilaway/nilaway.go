@@ -20,7 +20,7 @@ import (
 // Analyzer reports a nil value that flows to a dereference. It is the upstream
 // analyzer with constable's generated-file policy applied and with the
 // analyzed packages limited to the module that constable runs on.
-var Analyzer = generated.Skip(nilaway.Analyzer)
+var Analyzer = generated.Skip(skipEmptyNoLintFiles(scopeSSA(nilaway.Analyzer)))
 
 // includeAllPkgs keeps nilaway's own default, every package that it loads.
 var includeAllPkgs bool

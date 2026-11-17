@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -85,9 +84,7 @@ func TestFixes(t *testing.T) {
 			}
 			git := func(args ...string) {
 				t.Helper()
-				cmd := exec.CommandContext(t.Context(), "git", append([]string{"-C", dir}, args...)...)
-				out, err := cmd.CombinedOutput()
-				require.NoError(t, err, "%s", out)
+				runGit(t, dir, args...)
 			}
 			git("init", "-q")
 			git("add", ".")

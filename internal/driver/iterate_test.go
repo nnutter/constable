@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"go/format"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -30,9 +29,9 @@ func fixRepoFiles(t *testing.T, files map[string]string) string {
 	for name, source := range files {
 		require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(source), 0o644))
 	}
-	gitCommand(t, dir, "", "init", "-q")
-	gitCommand(t, dir, "", "add", ".")
-	gitCommand(t, dir, "", "-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-qm", "initial")
+	runGitInput(t, dir, "", "init", "-q")
+	runGitInput(t, dir, "", "add", ".")
+	runGitInput(t, dir, "", "-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-qm", "initial")
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
@@ -42,10 +41,7 @@ func fixRepoFiles(t *testing.T, files map[string]string) string {
 
 func gitCommand(t *testing.T, dir, input string, args ...string) {
 	t.Helper()
-	cmd := exec.CommandContext(t.Context(), "git", append([]string{"-C", dir}, args...)...)
-	cmd.Stdin = strings.NewReader(input)
-	out, err := cmd.CombinedOutput()
-	require.NoError(t, err, "%s", out)
+	runGitInput(t, dir, input, args...)
 }
 
 func runFix(t *testing.T, analyzer *analysis.Analyzer, diff bool) (int, string, string) {

@@ -2,7 +2,6 @@ package driver_test
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -30,9 +29,7 @@ func TestFixGitSafety(t *testing.T) {
 			dir := t.TempDir()
 			git := func(args ...string) {
 				t.Helper()
-				cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)
-				out, err := cmd.CombinedOutput()
-				require.NoError(t, err, "%s", out)
+				runGit(t, dir, args...)
 			}
 			write := func(name, value string) {
 				t.Helper()
