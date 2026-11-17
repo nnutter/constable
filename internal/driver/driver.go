@@ -487,7 +487,7 @@ func Run(args []string, analyzers []*analysis.Analyzer, opts Options) (exitcode 
 		return runFixes(args, analyzers, opts, cwd)
 	}
 
-	initial, _, err := load(args, opts.IncludeTests, needFacts(analyzers), nil)
+	initial, _, err := load(args, opts, needFacts(analyzers), nil)
 	if err != nil {
 		log.Print(err)
 		exitAtLeast(1)
@@ -610,7 +610,7 @@ func fixPassLimit(sources map[*token.File][]byte) int {
 }
 
 func analyzeFixPass(args []string, analyzers []*analysis.Analyzer, opts Options, overlay map[string][]byte) (*checker.Graph, map[*token.File][]byte, error) {
-	initial, sources, err := load(args, opts.IncludeTests, needFacts(analyzers), overlay)
+	initial, sources, err := load(args, opts, needFacts(analyzers), overlay)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -744,24 +744,30 @@ func needFacts(analyzers []*analysis.Analyzer) bool {
 	return false
 }
 
-func load(patterns []string, includeTests, allSyntax bool, overlay map[string][]byte) ([]*packages.Package, map[*token.File][]byte, error) {
+func load(patterns []string, opts Options, allSyntax bool, overlay map[string][]byte) ([]*packages.Package, map[*token.File][]byte, error) {
 	mode := packages.LoadSyntax
 	if allSyntax {
 		mode = packages.LoadAllSyntax
 	}
 	mode |= packages.NeedModule
-	sources := make(map[*token.File][]byte)
+	// Only fix passes need a snapshot to validate edits against parsed source.
+	var sources map[*token.File][]byte
+	if opts.Fix {
+		sources = make(map[*token.File][]byte)
+	}
 	var mu sync.Mutex
 	conf := packages.Config{
 		Mode:    mode,
-		Tests:   includeTests,
+		Tests:   opts.IncludeTests,
 		Overlay: overlay,
 		ParseFile: func(fset *token.FileSet, filename string, src []byte) (*ast.File, error) {
 			file, err := parser.ParseFile(fset, filename, src, parser.AllErrors|parser.ParseComments)
-			if file != nil {
-				mu.Lock()
-				sources[fset.File(file.Pos())] = bytes.Clone(src)
-				mu.Unlock()
+			if opts.Fix {
+				if file != nil {
+					mu.Lock()
+					sources[fset.File(file.Pos())] = bytes.Clone(src)
+					mu.Unlock()
+				}
 			}
 			return file, err
 		},
