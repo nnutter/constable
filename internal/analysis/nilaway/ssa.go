@@ -16,6 +16,15 @@ import (
 // retain their identities because analyzers outside NilAway may share their
 // fact types. Upstream analyzers remain unchanged for other users.
 func scopeSSA(root *analysis.Analyzer) *analysis.Analyzer {
+	scoped := *buildssa.Analyzer
+	scoped.Requires = append(slices.Clone(scoped.Requires), config.Analyzer)
+	scoped.Run = runScopedSSA
+	return replacePrerequisite(root, buildssa.Analyzer, &scoped)
+}
+
+// replacePrerequisite copies only the consumers of a changed prerequisite,
+// preserving shared identities and the keys upstream uses in ResultOf.
+func replacePrerequisite(root, target, replacement *analysis.Analyzer) *analysis.Analyzer {
 	copies := make(map[*analysis.Analyzer]*analysis.Analyzer)
 	var clone func(*analysis.Analyzer) *analysis.Analyzer
 	clone = func(a *analysis.Analyzer) *analysis.Analyzer {
@@ -25,10 +34,9 @@ func scopeSSA(root *analysis.Analyzer) *analysis.Analyzer {
 		copy := *a
 		copies[a] = &copy
 		requires, run := a.Requires, a.Run
-		changed := a == buildssa.Analyzer
+		changed := a == target
 		if changed {
-			requires = append(slices.Clone(requires), config.Analyzer)
-			run = runScopedSSA
+			requires, run = replacement.Requires, replacement.Run
 		}
 		copy.Requires = make([]*analysis.Analyzer, len(requires))
 		for i, req := range requires {
