@@ -14,14 +14,14 @@ CONDA_PREFIX = false
 "conda:git" = "latest"
 jactionlint = "latest"
 "github:alecthomas/go-check-sumtype" = "latest"
-"github:nnutter/mdlint" = "latest"
-"github:nnutter/timber" = "latest"
+"github:nnutter/mdlint" = { version = "latest", "minimum_release_age" = "0" }
+"github:nnutter/timber" = { version = "latest", "minimum_release_age" = "0" }
 "github:securego/gosec" = "latest"
 betterleaks = "latest"
 go = "latest"
 "go:github.com/kisielk/errcheck" = "latest"
 "go:github.com/kojah/gohawk" = "latest"
-"go:github.com/nnutter/testifylint" = "latest"
+"go:github.com/nnutter/testifylint" = { version = "latest", "minimum_release_age" = "0" }
 "go:go.uber.org/nilaway/cmd/nilaway" = "latest"
 "go:golang.org/x/tools/cmd/goimports" = "latest"
 "go:golang.org/x/vuln/cmd/govulncheck" = "latest"
