@@ -896,44 +896,44 @@ url_api = "https://api.github.com/repos/nnutter/mdlint/releases/assets/696288485
 provenance = "github-attestations"
 
 [[tools."github:nnutter/timber"]]
-version = "0.24.3"
+version = "0.25.3"
 backend = "github:nnutter/timber"
 specifiers = ["latest"]
 
 [tools."github:nnutter/timber"."platforms.linux-arm64"]
-checksum = "sha256:9a08a1dbf841ceecb42ab4e747249ee05a4c85294d1bb0c2a0dfd49c9404a6d3"
-url = "https://github.com/nnutter/timber/releases/download/v0.24.3/timber_v0.24.3_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/718974429"
+checksum = "sha256:e5769e0c9dfc42123974c5b598ed79b4fe8e06004579c7fdcedbf366eb0ed8ca"
+url = "https://github.com/nnutter/timber/releases/download/v0.25.3/timber_v0.25.3_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/760679272"
 provenance = "github-attestations"
 
 [tools."github:nnutter/timber"."platforms.linux-arm64-musl"]
-checksum = "sha256:9a08a1dbf841ceecb42ab4e747249ee05a4c85294d1bb0c2a0dfd49c9404a6d3"
-url = "https://github.com/nnutter/timber/releases/download/v0.24.3/timber_v0.24.3_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/718974429"
+checksum = "sha256:e5769e0c9dfc42123974c5b598ed79b4fe8e06004579c7fdcedbf366eb0ed8ca"
+url = "https://github.com/nnutter/timber/releases/download/v0.25.3/timber_v0.25.3_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/760679272"
 provenance = "github-attestations"
 
 [tools."github:nnutter/timber"."platforms.linux-x64"]
-checksum = "sha256:f08564409201cb14f61d3f56ef637b36fc60846766c7d0946c88a4fc6082f4b0"
-url = "https://github.com/nnutter/timber/releases/download/v0.24.3/timber_v0.24.3_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/718974453"
+checksum = "sha256:363445eaddc736cb619f97288b117cc402ceae222aebfa620070340068c64ea1"
+url = "https://github.com/nnutter/timber/releases/download/v0.25.3/timber_v0.25.3_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/760679268"
 provenance = "github-attestations"
 
 [tools."github:nnutter/timber"."platforms.linux-x64-musl"]
-checksum = "sha256:f08564409201cb14f61d3f56ef637b36fc60846766c7d0946c88a4fc6082f4b0"
-url = "https://github.com/nnutter/timber/releases/download/v0.24.3/timber_v0.24.3_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/718974453"
+checksum = "sha256:363445eaddc736cb619f97288b117cc402ceae222aebfa620070340068c64ea1"
+url = "https://github.com/nnutter/timber/releases/download/v0.25.3/timber_v0.25.3_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/760679268"
 provenance = "github-attestations"
 
 [tools."github:nnutter/timber"."platforms.macos-arm64"]
-checksum = "sha256:a312c466c2f7f575562691700d397e38b67fa812b623015f7003e3d8253db7d0"
-url = "https://github.com/nnutter/timber/releases/download/v0.24.3/timber_v0.24.3_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/718974425"
+checksum = "sha256:bcfff2a777b672c101bc38e89680d9d6730346a3093385b71f4dd99726a45d43"
+url = "https://github.com/nnutter/timber/releases/download/v0.25.3/timber_v0.25.3_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/760679270"
 provenance = "github-attestations"
 
 [tools."github:nnutter/timber"."platforms.macos-x64"]
-checksum = "sha256:5e68cebe737c5c33470cb050590c799b5fc3361855d0762061c14c52f190ce5c"
-url = "https://github.com/nnutter/timber/releases/download/v0.24.3/timber_v0.24.3_darwin_amd64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/718974439"
+checksum = "sha256:3f2a2ee18dfc23780c3cc4b39536e95b5b8300341e2479754d7232d0b8d63c4c"
+url = "https://github.com/nnutter/timber/releases/download/v0.25.3/timber_v0.25.3_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/760679274"
 provenance = "github-attestations"
 
 [[tools."github:securego/gosec"]]
@@ -1037,12 +1037,12 @@ backend = "go:go.uber.org/nilaway/cmd/nilaway"
 specifiers = ["latest"]
 
 [[tools."go:golang.org/x/tools/cmd/goimports"]]
-version = "0.52.0"
+version = "0.53.0"
 backend = "go:golang.org/x/tools/cmd/goimports"
 specifiers = ["latest"]
 
 [[tools."go:golang.org/x/vuln/cmd/govulncheck"]]
-version = "1.9.0"
+version = "1.10.0"
 backend = "go:golang.org/x/vuln/cmd/govulncheck"
 specifiers = ["latest"]
 
@@ -1216,10 +1216,10 @@ url = "https://github.com/apple/pkl/releases/download/0.33.0/pkl-windows-amd64.e
 url_api = "https://api.github.com/repos/apple/pkl/releases/assets/714757051"
 
 [[tools."pypi:agentskills-tools"]]
-version = "0.8.0"
+version = "0.9.0"
 backend = "pypi:agentskills-tools"
 specifiers = ["latest"]
-uv = { path = ".mise/locks/pypi-agentskills-tools/0.8.0", digest = "sha256:ea4b89e90359e72f44b99c315b1af9d491953b37c69f531d50dba19ecdd1a018" }
+uv = { path = ".mise/locks/pypi-agentskills-tools/0.9.0", digest = "sha256:49b45405d7acd3fe5570bf3f0a9bfcb9177a19b4bf504348f1be8a4c4abae6fc" }
 
 [[tools.python]]
 version = "3.14.10"
@@ -1302,97 +1302,97 @@ url = "https://github.com/dominikh/go-tools/releases/download/2026.2.2/staticche
 url_api = "https://api.github.com/repos/dominikh/go-tools/releases/assets/633962362"
 
 [[tools.tombi]]
-version = "1.11.2"
+version = "1.11.3"
 backend = "aqua:tombi-toml/tombi"
 specifiers = ["latest"]
 
 [tools.tombi."platforms.linux-arm64"]
-checksum = "sha256:14122e634113d2d9b1210b3f01d5139289575494a2d585824e1e51e116a58d96"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.2/tombi-cli-1.11.2-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/731865789"
+checksum = "sha256:083614471a69e15f147ba68c96fe1e3ea02e8efe38d6bcdb4606b5a37ab8758a"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.3/tombi-cli-1.11.3-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/755626402"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.linux-arm64-musl"]
-checksum = "sha256:14122e634113d2d9b1210b3f01d5139289575494a2d585824e1e51e116a58d96"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.2/tombi-cli-1.11.2-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/731865789"
+checksum = "sha256:083614471a69e15f147ba68c96fe1e3ea02e8efe38d6bcdb4606b5a37ab8758a"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.3/tombi-cli-1.11.3-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/755626402"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.linux-x64"]
-checksum = "sha256:8bb862497e99b415310ede463ee6cf997845368d3e6d4edac4dd33b07084beb3"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.2/tombi-cli-1.11.2-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/731865894"
+checksum = "sha256:36672279d05f093455f01fa5a2799a8cc2162a9195cbbb23f0f8d1107d0de497"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.3/tombi-cli-1.11.3-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/755626452"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.linux-x64-musl"]
-checksum = "sha256:8bb862497e99b415310ede463ee6cf997845368d3e6d4edac4dd33b07084beb3"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.2/tombi-cli-1.11.2-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/731865894"
+checksum = "sha256:36672279d05f093455f01fa5a2799a8cc2162a9195cbbb23f0f8d1107d0de497"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.3/tombi-cli-1.11.3-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/755626452"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.macos-arm64"]
-checksum = "sha256:035be0afc61549adbe9ce6b6ab582cfff99bcd6b86f38f847149c3819dc89d33"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.2/tombi-cli-1.11.2-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/731865806"
+checksum = "sha256:4e7daae9197910fe3717d241e5ca85cafd0f7f0ead988056fdd0b2cf2a447600"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.3/tombi-cli-1.11.3-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/755626399"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.macos-x64"]
-checksum = "sha256:09ed72a2e8a5a57fa325f95942833692bdc838b4ca4c0964dfbad20da44553c3"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.2/tombi-cli-1.11.2-x86_64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/731865783"
+checksum = "sha256:642900713c3cb04adf45264117649e5f4731395b62cbafee8a9a2824fa479684"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.3/tombi-cli-1.11.3-x86_64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/755626407"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.windows-x64"]
-checksum = "sha256:fc059da801b0f6f6dd816eb4ede2a532d1562bc16c56cfe6557a9ecfa81a235a"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.2/tombi-cli-1.11.2-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/731865844"
+checksum = "sha256:b6b2d9e6419216aaa0b8e74a5c81c48335cb193d6eb87f50a7d77468bce10073"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.11.3/tombi-cli-1.11.3-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/755626450"
 provenance = "github-attestations"
 
 [[tools.uv]]
-version = "0.13.8"
+version = "0.13.9"
 backend = "aqua:astral-sh/uv"
 specifiers = ["latest"]
 
 [tools.uv."platforms.linux-arm64"]
-checksum = "sha256:74f2f5c6024d397481db228db8fc25eed420db192243f88438c118e7e013e585"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.8/uv-aarch64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/740313629"
+checksum = "sha256:0797542018e541a9288855df555c8077eed06f7a47d206362030480e8ecc9f3d"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-aarch64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513657"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-arm64-musl"]
-checksum = "sha256:0c6f8593fcf1eadfc60e663b685c408267559d7c5d61c689bbb9f3a7e369ba32"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.8/uv-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/740313665"
+checksum = "sha256:37fbb7c5bc66cf99c12aa881949d216181e201dec449772c4329e56487d61179"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513671"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-x64"]
-checksum = "sha256:5acfd9177cfecf0bf87578f059728215ccc884388988f55f7a65041b57387d91"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.8/uv-x86_64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/740313966"
+checksum = "sha256:a7fbaff2b9a271d85c1bdb540941090fd1ce011797b4abeb48e4dcd39c2471d5"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513954"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-x64-musl"]
-checksum = "sha256:61fb26dabc4f0cf1d050fc6c67d40e43e4fae2994af21ebc1e050b233bf2b5ed"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.8/uv-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/740313983"
+checksum = "sha256:58ccf5f1792b8a5a88d01bc910ea131a8b3db4a319a17ad5fad75e0845a3e271"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513984"
 provenance = "github-attestations"
 
 [tools.uv."platforms.macos-arm64"]
-checksum = "sha256:6b71028a6b904f2ae3340ef52e595512de807d06c0a20eaef2f692581b246558"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.8/uv-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/740313603"
+checksum = "sha256:5aeca67f2283f75235de40d0bd9c0a5bbc5fce23b6d48b3bf9fa1b2db08382ca"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513631"
 provenance = "github-attestations"
 
 [tools.uv."platforms.macos-x64"]
-checksum = "sha256:a04c2ffeac28b2003a2c13caf538ab425fcd7def3e4a41571f4a8fb370a66af3"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.8/uv-x86_64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/740313917"
+checksum = "sha256:617a3211261b0fc739562f0071aa34e9739797c510208ede8e2977c30903d041"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-x86_64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513912"
 provenance = "github-attestations"
 
 [tools.uv."platforms.windows-x64"]
-checksum = "sha256:529e78a9cec6cd7e3e014f7ecd8bda0c113969d4ed0f2efeedb85c30943325b8"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.8/uv-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/740313927"
+checksum = "sha256:edd61f7f5728a56cc62455386661860bdfc7bab65872f39b0c25bdcc1d8e1beb"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513940"
 provenance = "github-attestations"
 
 [[tools.yamlfmt]]

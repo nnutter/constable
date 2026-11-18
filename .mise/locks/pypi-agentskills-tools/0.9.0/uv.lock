@@ -4,58 +4,58 @@ requires-python = ">=3.12, <4.0"
 
 [[package]]
 name = "agentskills-adapters"
-version = "0.8.0"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "agentskills-core" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8c/85/27777e52dbf5260c605f097807e67012aab28ff54c43b4af9c553808a635/agentskills_adapters-0.8.0.tar.gz", hash = "sha256:0deba1e9d6fab0a5b10fcca4794c18a060e61cb4ac467736828e420c3747072c", size = 3824, upload-time = "2026-10-30T13:24:46.046Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/03/3c6f4ac1280a4da9a5f92901387caf2e5456c6c699da5acb20feb33474ab/agentskills_adapters-0.9.0.tar.gz", hash = "sha256:fdbbbb79617ac0cf5c07399c62498dbde09599ba6746d71c317c1a84e5322bae", size = 3826, upload-time = "2026-11-16T05:03:58.344Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ef/e5/8de33d523e0f43257792291419f5d51fd1fae982fbd54a4798590795c135/agentskills_adapters-0.8.0-py3-none-any.whl", hash = "sha256:8d26cd9f23bbd142d7716658ff9de4fb811e15ae9c91c6a196aa8edf82f0f2c6", size = 4890, upload-time = "2026-10-30T13:24:44.866Z" },
+    { url = "https://files.pythonhosted.org/packages/03/0b/38b8402ad7a26731bef1dcbedbe577d39d0aa0865a7d32a985e930d22efa/agentskills_adapters-0.9.0-py3-none-any.whl", hash = "sha256:9ab8836d0d49d0221d10f1a54f26beb60f7816e6392a66fdd5906f14d3e09259", size = 4892, upload-time = "2026-11-16T05:03:57.222Z" },
 ]
 
 [[package]]
 name = "agentskills-core"
-version = "0.8.0"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cd/49/61ee03013b09779b26805d3a368146ff40ca0e29aa5c4e7be7c4e7ababe5/agentskills_core-0.8.0.tar.gz", hash = "sha256:97dcfaf71f5f14a73217708ace5f34ee2286cfe5835f251a032f196d9fa0045b", size = 55081, upload-time = "2026-10-30T13:24:37.656Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/77/46/f03e922f4c12eda74819762d3c0687556138313e888198b93a539027ef85/agentskills_core-0.9.0.tar.gz", hash = "sha256:aecf737bcb294cc10390d7419d6df45a68ab4afbb111a5830df2fbe0861637b4", size = 55080, upload-time = "2026-11-16T05:03:49.27Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/62/09ad29b6e020544ba3684b8b310efa8e6e09f85d9baaf75713ac98751579/agentskills_core-0.8.0-py3-none-any.whl", hash = "sha256:c5a4ec9d333f84745056d5a90423357d92aad23412373bc620edbdf0e29b6752", size = 56793, upload-time = "2026-10-30T13:24:36.372Z" },
+    { url = "https://files.pythonhosted.org/packages/12/99/af0167e26a1d12e78459d6eb94fb169b9a8f2aa925760ffd1b332d635a42/agentskills_core-0.9.0-py3-none-any.whl", hash = "sha256:2431158f0303febd80664c8faa1898887a5d1824ee64c103ab3e259b66ab0882", size = 56793, upload-time = "2026-11-16T05:03:47.943Z" },
 ]
 
 [[package]]
 name = "agentskills-fs"
-version = "0.8.0"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "agentskills-core" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/dd/c7/697156908bc86a8424dc184b6498c15d18ce339c3639196db383a08e954a/agentskills_fs-0.8.0.tar.gz", hash = "sha256:f00670f5413a5249119643c9442520d619257548ccf9b0a3c8262f68edba612a", size = 7644, upload-time = "2026-10-30T13:24:54.337Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/75/92/827a0df3f126f5cfb9591fefcf4ebd5771d43fa9328ec0b2d9a182e8c26c/agentskills_fs-0.9.0.tar.gz", hash = "sha256:8288fcfa470352349211b74ee05a8c4d0489b99893a59e24d885df49cd15828f", size = 7647, upload-time = "2026-11-16T05:04:06.656Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/77/c7/7745f59afc0ea16b824097822d98685ba7ac4a156d664eaa9bad829568fe/agentskills_fs-0.8.0-py3-none-any.whl", hash = "sha256:ad8205a1d0f7625b660d142d6be9135c190f1c5200bbfc402323c941e6dcaeee", size = 9128, upload-time = "2026-10-30T13:24:53.18Z" },
+    { url = "https://files.pythonhosted.org/packages/03/6d/a15eba44aa8ce82ecf5b75d010fa1840ffb01a2de295b5118a1b23fef44e/agentskills_fs-0.9.0-py3-none-any.whl", hash = "sha256:09c540d4012ede041dabc0d84be51930fff6dcfda7b0767beb2e999b46d16a11", size = 9136, upload-time = "2026-11-16T05:04:05.543Z" },
 ]
 
 [[package]]
 name = "agentskills-git"
-version = "0.8.0"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "agentskills-core" },
     { name = "agentskills-fs" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0d/1a/7230671e56ec42709c015163b352a10b76f610d0bf38e331b611558c6019/agentskills_git-0.8.0.tar.gz", hash = "sha256:3cd0e4478e1e38c209782490af7e94e3ed7a53cd3f0633624814df06d13fb765", size = 6904, upload-time = "2026-10-30T13:25:02.414Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4c/1d/fa9c82ec8993150d2b8dd670cf0809b376c9d7e5a24e3cd535c94c7cd63f/agentskills_git-0.9.0.tar.gz", hash = "sha256:05f5d1b2078655299af10348bdbc8f4c5970de4b98b3e5f345694fb690d3c7b4", size = 6909, upload-time = "2026-11-16T05:04:16.174Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/71/2e/5ed1141e670e5c7786d7576749a0d3ee276a4b6b472dfc090aee6665da1e/agentskills_git-0.8.0-py3-none-any.whl", hash = "sha256:dc7a13858a59b2ae29975a830e1e22345152fe6e14e5bb526e78046efa0f8004", size = 7953, upload-time = "2026-10-30T13:25:01.356Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/d9/521971e59768f7b6b993dd92c5e251ccd4f26815a54f3ce09fb48238434c/agentskills_git-0.9.0-py3-none-any.whl", hash = "sha256:0e28e3380eabef97586cf252a5a752bbd6c6016fd38d2b3c0aa4929783f1824d", size = 7957, upload-time = "2026-11-16T05:04:14.85Z" },
 ]
 
 [[package]]
 name = "agentskills-tools"
-version = "0.8.0"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "agentskills-adapters" },
@@ -64,9 +64,9 @@ dependencies = [
     { name = "agentskills-git" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b6/bc/2b43703b3316abff611df0d13fce4e75ed611b243a440f45b366f127058b/agentskills_tools-0.8.0.tar.gz", hash = "sha256:1e24f4b791d747ab3f66de4d4d89d2a2b6df275932fc7e5e2cbf70a3a614c7ec", size = 43486, upload-time = "2026-10-30T15:17:49.985Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8f/0c/271a92050e23ba32bd783978cbe6af9fa51866ac529897c8b669eed56a93/agentskills_tools-0.9.0.tar.gz", hash = "sha256:a694db060b678182d89bf05c3c03d99117c8b43f1ea3a468c55ee139fc92e340", size = 44461, upload-time = "2026-11-16T05:05:06.677Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/36/c0/256c25be1dc2ec60a4f17a6fbe2f5a3d0e9dc7ab805852b685e6f5b84311/agentskills_tools-0.8.0-py3-none-any.whl", hash = "sha256:1c44cacf13bc3e813cc521eba54657872d8be207623009b02ad864fd91039bbe", size = 46311, upload-time = "2026-10-30T15:17:48.438Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/a9/bf72f9463b7063a157ed81600a0aaec70b87085d271b4c2375ae845bba2c/agentskills_tools-0.9.0-py3-none-any.whl", hash = "sha256:f53ad4f3d708f7e1cc559aff2e32dc6d11b43a9ceee0fdf43965437881a8d103", size = 47063, upload-time = "2026-11-16T05:05:05.277Z" },
 ]
 
 [[package]]
@@ -78,7 +78,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "agentskills-tools", specifier = "==0.8.0" }]
+requires-dist = [{ name = "agentskills-tools", specifier = "==0.9.0" }]
 
 [[package]]
 name = "pyyaml"
