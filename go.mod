@@ -11,6 +11,9 @@ require (
 	golang.org/x/tools v0.52.0
 )
 
+// Temporary fork with the alias fix, until it merges upstream.
+replace go.uber.org/nilaway => github.com/nnutter/nilaway v0.0.0-20261121220555-b69650766280
+
 require (
 	github.com/klauspost/compress v1.20.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
