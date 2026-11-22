@@ -137,44 +137,44 @@ url_api = "https://api.github.com/repos/nnutter/mdlint/releases/assets/696288485
 provenance = "github-attestations"
 
 [[tools."github:nnutter/timber"]]
-version = "0.25.3"
+version = "0.26.1"
 backend = "github:nnutter/timber"
 specifiers = ["latest"]
 
 [tools."github:nnutter/timber"."platforms.linux-arm64"]
-checksum = "sha256:e5769e0c9dfc42123974c5b598ed79b4fe8e06004579c7fdcedbf366eb0ed8ca"
-url = "https://github.com/nnutter/timber/releases/download/v0.25.3/timber_v0.25.3_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/760679272"
+checksum = "sha256:1cfc63c610a3253421e9223e57e1222a69a5b82322757da750de1994ff662b8a"
+url = "https://github.com/nnutter/timber/releases/download/v0.26.1/timber_v0.26.1_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/773942856"
 provenance = "github-attestations"
 
 [tools."github:nnutter/timber"."platforms.linux-arm64-musl"]
-checksum = "sha256:e5769e0c9dfc42123974c5b598ed79b4fe8e06004579c7fdcedbf366eb0ed8ca"
-url = "https://github.com/nnutter/timber/releases/download/v0.25.3/timber_v0.25.3_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/760679272"
+checksum = "sha256:1cfc63c610a3253421e9223e57e1222a69a5b82322757da750de1994ff662b8a"
+url = "https://github.com/nnutter/timber/releases/download/v0.26.1/timber_v0.26.1_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/773942856"
 provenance = "github-attestations"
 
 [tools."github:nnutter/timber"."platforms.linux-x64"]
-checksum = "sha256:363445eaddc736cb619f97288b117cc402ceae222aebfa620070340068c64ea1"
-url = "https://github.com/nnutter/timber/releases/download/v0.25.3/timber_v0.25.3_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/760679268"
+checksum = "sha256:65880784de1264ae29ae091e378d5bc5ad0a3bed593ae72e65b1c294df5a8e0d"
+url = "https://github.com/nnutter/timber/releases/download/v0.26.1/timber_v0.26.1_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/773942853"
 provenance = "github-attestations"
 
 [tools."github:nnutter/timber"."platforms.linux-x64-musl"]
-checksum = "sha256:363445eaddc736cb619f97288b117cc402ceae222aebfa620070340068c64ea1"
-url = "https://github.com/nnutter/timber/releases/download/v0.25.3/timber_v0.25.3_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/760679268"
+checksum = "sha256:65880784de1264ae29ae091e378d5bc5ad0a3bed593ae72e65b1c294df5a8e0d"
+url = "https://github.com/nnutter/timber/releases/download/v0.26.1/timber_v0.26.1_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/773942853"
 provenance = "github-attestations"
 
 [tools."github:nnutter/timber"."platforms.macos-arm64"]
-checksum = "sha256:bcfff2a777b672c101bc38e89680d9d6730346a3093385b71f4dd99726a45d43"
-url = "https://github.com/nnutter/timber/releases/download/v0.25.3/timber_v0.25.3_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/760679270"
+checksum = "sha256:52687516403d2572c08ef43f73375568aea3b96f570443258a0d0f7a5b2ad306"
+url = "https://github.com/nnutter/timber/releases/download/v0.26.1/timber_v0.26.1_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/773942851"
 provenance = "github-attestations"
 
 [tools."github:nnutter/timber"."platforms.macos-x64"]
-checksum = "sha256:3f2a2ee18dfc23780c3cc4b39536e95b5b8300341e2479754d7232d0b8d63c4c"
-url = "https://github.com/nnutter/timber/releases/download/v0.25.3/timber_v0.25.3_darwin_amd64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/760679274"
+checksum = "sha256:df5e397f5ae5c9a31ae60bdbb845a1be293760efc97d1f25ace1ac8cf9294057"
+url = "https://github.com/nnutter/timber/releases/download/v0.26.1/timber_v0.26.1_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/773942855"
 provenance = "github-attestations"
 
 [[tools."github:securego/gosec"]]
@@ -416,45 +416,45 @@ signer = "sigstore-oidc:https://github.com/jdx/jactionlint/.github/workflows/rel
 repository_ids = { repository = "1404951382" }
 
 [[tools.pkl]]
-version = "0.33.0"
+version = "0.33.1"
 backend = "aqua:apple/pkl"
 specifiers = ["latest"]
 
 [tools.pkl."platforms.linux-arm64"]
-checksum = "sha256:edcea361402ecab0f3a93f86b1a896c41d00a9241f4962f70278254b08fbd26d"
+checksum = "sha256:4a752096dab13d7432e1f0a4f1219833df95e1e36ce0b8d424b0edb2cd5436f9"
 checksum_source = "mise-versions"
-url = "https://github.com/apple/pkl/releases/download/0.33.0/pkl-linux-aarch64"
-url_api = "https://api.github.com/repos/apple/pkl/releases/assets/714756970"
+url = "https://github.com/apple/pkl/releases/download/0.33.1/pkl-linux-aarch64"
+url_api = "https://api.github.com/repos/apple/pkl/releases/assets/764390162"
 
 [tools.pkl."platforms.linux-arm64-musl"]
-checksum = "sha256:edcea361402ecab0f3a93f86b1a896c41d00a9241f4962f70278254b08fbd26d"
+checksum = "sha256:4a752096dab13d7432e1f0a4f1219833df95e1e36ce0b8d424b0edb2cd5436f9"
 checksum_source = "mise-versions"
-url = "https://github.com/apple/pkl/releases/download/0.33.0/pkl-linux-aarch64"
-url_api = "https://api.github.com/repos/apple/pkl/releases/assets/714756970"
+url = "https://github.com/apple/pkl/releases/download/0.33.1/pkl-linux-aarch64"
+url_api = "https://api.github.com/repos/apple/pkl/releases/assets/764390162"
 
 [tools.pkl."platforms.linux-x64"]
-checksum = "sha256:b9a6ddea6b382b7d4db4cf78e77aa3858e0c8a7e02939d2ba298574b5d1fcc69"
+checksum = "sha256:acbca9bb4f31139d09e295d03c9fb25f77edf5a74af4e772b56b32dc6dc17c44"
 checksum_source = "mise-versions"
-url = "https://github.com/apple/pkl/releases/download/0.33.0/pkl-linux-amd64"
-url_api = "https://api.github.com/repos/apple/pkl/releases/assets/714756975"
+url = "https://github.com/apple/pkl/releases/download/0.33.1/pkl-linux-amd64"
+url_api = "https://api.github.com/repos/apple/pkl/releases/assets/764390166"
 
 [tools.pkl."platforms.linux-x64-musl"]
-checksum = "sha256:b9a6ddea6b382b7d4db4cf78e77aa3858e0c8a7e02939d2ba298574b5d1fcc69"
+checksum = "sha256:acbca9bb4f31139d09e295d03c9fb25f77edf5a74af4e772b56b32dc6dc17c44"
 checksum_source = "mise-versions"
-url = "https://github.com/apple/pkl/releases/download/0.33.0/pkl-linux-amd64"
-url_api = "https://api.github.com/repos/apple/pkl/releases/assets/714756975"
+url = "https://github.com/apple/pkl/releases/download/0.33.1/pkl-linux-amd64"
+url_api = "https://api.github.com/repos/apple/pkl/releases/assets/764390166"
 
 [tools.pkl."platforms.macos-arm64"]
-checksum = "sha256:e39c157df0f00a35d34b46270a768784edcaf509aafbf743849b27b4c83ef83b"
+checksum = "sha256:6f93ddf6524a5771bd4b6ebde11010c6dfee8e3a8906ffebaa8f52f8a0ba16b7"
 checksum_source = "mise-versions"
-url = "https://github.com/apple/pkl/releases/download/0.33.0/pkl-macos-aarch64"
-url_api = "https://api.github.com/repos/apple/pkl/releases/assets/714757040"
+url = "https://github.com/apple/pkl/releases/download/0.33.1/pkl-macos-aarch64"
+url_api = "https://api.github.com/repos/apple/pkl/releases/assets/764390310"
 
 [tools.pkl."platforms.windows-x64"]
-checksum = "sha256:9875af0d17d3535ed0e3903f3ae71fc8007268949328f73c2d12942fca11840c"
+checksum = "sha256:b1da686befc4ce4d92fe81bd2892e7457a505328313380010c4791c7f68d7432"
 checksum_source = "mise-versions"
-url = "https://github.com/apple/pkl/releases/download/0.33.0/pkl-windows-amd64.exe"
-url_api = "https://api.github.com/repos/apple/pkl/releases/assets/714757051"
+url = "https://github.com/apple/pkl/releases/download/0.33.1/pkl-windows-amd64.exe"
+url_api = "https://api.github.com/repos/apple/pkl/releases/assets/764390372"
 
 [[tools."pypi:agentskills-tools"]]
 version = "0.9.0"

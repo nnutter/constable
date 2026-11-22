@@ -44,9 +44,10 @@ jobs:
           GOOS: ${{ matrix.platform.os }}
           GOARCH: ${{ matrix.platform.arch }}
         run: |
-          name="${BINARY}_${TAG}_${GOOS}_${GOARCH}"
-          CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${TAG}" -o "$name" ./cmd/constable
-          tar -czf "${name}.tar.gz" "$name"
+          # The archive name carries the version; the binary inside keeps the
+          # stable name that users and installers put on PATH.
+          CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${TAG}" -o "$BINARY" ./cmd/constable
+          tar -czf "${BINARY}_${TAG}_${GOOS}_${GOARCH}.tar.gz" "$BINARY"
       - name: Upload
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -56,7 +57,9 @@ jobs:
   publish:
     needs: build
     permissions:
+      attestations: write
       contents: write
+      id-token: write
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     env:
@@ -92,6 +95,14 @@ jobs:
         run: gh release create "$TAG" --verify-tag --draft --generate-notes --title "$TAG"
       - name: Upload the assets
         run: gh release upload "$TAG" dist/* --clobber
+      # The checksums say the files did not change in transit; the packslip
+      # records the executable inside each archive and signs every digest
+      # with this workflow's identity. See https://packslip.dev.
+      - name: Publish the packslip
+        uses: jdx/packslip@e0340e0c1d10c90a434de2b90f3a1ba345923564 # v1.11.4
+        with:
+          artifacts: dist/*.tar.gz
+          bin: constable
       # GITHUB_TOKEN starts no workflow run, so the app token publishes the
       # release and starts the tap update.
       - name: Publish the release
