@@ -57,7 +57,9 @@ jobs:
   publish:
     needs: build
     permissions:
+      attestations: write
       contents: write
+      id-token: write
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     env:
@@ -93,6 +95,14 @@ jobs:
         run: gh release create "$TAG" --verify-tag --draft --generate-notes --title "$TAG"
       - name: Upload the assets
         run: gh release upload "$TAG" dist/* --clobber
+      # The checksums say the files did not change in transit; the packslip
+      # records the executable inside each archive and signs every digest
+      # with this workflow's identity. See https://packslip.dev.
+      - name: Publish the packslip
+        uses: jdx/packslip@e0340e0c1d10c90a434de2b90f3a1ba345923564 # v1.11.4
+        with:
+          artifacts: dist/*.tar.gz
+          bin: constable
       # GITHUB_TOKEN starts no workflow run, so the app token publishes the
       # release and starts the tap update.
       - name: Publish the release
