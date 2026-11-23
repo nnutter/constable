@@ -49,46 +49,6 @@ url = "https://github.com/betterleaks/betterleaks/releases/download/v1.10.1/bett
 url_api = "https://api.github.com/repos/betterleaks/betterleaks/releases/assets/740237680"
 provenance = "cosign"
 
-[[tools."github:alecthomas/go-check-sumtype"]]
-version = "0.5.0"
-backend = "github:alecthomas/go-check-sumtype"
-specifiers = ["latest"]
-
-[tools."github:alecthomas/go-check-sumtype"."platforms.linux-arm64"]
-checksum = "sha256:834a7831e9a11365d719d8d9bce03812bbde126357d009bd93617f7282bdf3a6"
-url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-linux-arm64.tar.gz"
-url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663818"
-
-[tools."github:alecthomas/go-check-sumtype"."platforms.linux-arm64-musl"]
-checksum = "sha256:834a7831e9a11365d719d8d9bce03812bbde126357d009bd93617f7282bdf3a6"
-url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-linux-arm64.tar.gz"
-url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663818"
-
-[tools."github:alecthomas/go-check-sumtype"."platforms.linux-x64"]
-checksum = "sha256:84c803f5d242d10983d7f16136fc034d6c5aa57f70d4560ca1a7f8eae16d0aab"
-url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-linux-amd64.tar.gz"
-url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663817"
-
-[tools."github:alecthomas/go-check-sumtype"."platforms.linux-x64-musl"]
-checksum = "sha256:84c803f5d242d10983d7f16136fc034d6c5aa57f70d4560ca1a7f8eae16d0aab"
-url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-linux-amd64.tar.gz"
-url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663817"
-
-[tools."github:alecthomas/go-check-sumtype"."platforms.macos-arm64"]
-checksum = "sha256:013587221143de7a9809591ef31761db50ceb10cbf73f1fba4f71a3bece6969b"
-url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-darwin-arm64.tar.gz"
-url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663819"
-
-[tools."github:alecthomas/go-check-sumtype"."platforms.macos-x64"]
-checksum = "sha256:c04403ebbde16a18ba132474577f7c1f1ca5fe83000d18638d2c8cca2610309c"
-url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-darwin-amd64.tar.gz"
-url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663830"
-
-[tools."github:alecthomas/go-check-sumtype"."platforms.windows-x64"]
-checksum = "sha256:7bdf4bcaecadbc6ccf97d7d60dd0d164c2b4a076f27b360a8ebf9e2633384d4d"
-url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-windows-amd64.tar.gz"
-url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663836"
-
 [[tools."github:securego/gosec"]]
 version = "2.30.0"
 backend = "github:securego/gosec"
@@ -169,24 +129,9 @@ url = "https://dl.google.com/go/go1.27.4.darwin-amd64.tar.gz"
 checksum = "sha256:178ab98950ac69ab25069307dc6ade79f3816e414cce95b4da166a115cde1e7e"
 url = "https://dl.google.com/go/go1.27.4.windows-amd64.zip"
 
-[[tools."go:github.com/kisielk/errcheck"]]
-version = "1.30.0"
-backend = "go:github.com/kisielk/errcheck"
-specifiers = ["latest"]
-
 [[tools."go:github.com/kojah/gohawk"]]
 version = "0.8.1"
 backend = "go:github.com/kojah/gohawk"
-specifiers = ["latest"]
-
-[[tools."go:github.com/nnutter/testifylint"]]
-version = "0.0.1"
-backend = "go:github.com/nnutter/testifylint"
-specifiers = ["latest"]
-
-[[tools."go:go.uber.org/nilaway/cmd/nilaway"]]
-version = "0.0.0-20261112030514-ccd005690d1e"
-backend = "go:go.uber.org/nilaway/cmd/nilaway"
 specifiers = ["latest"]
 
 [[tools."go:golang.org/x/tools/cmd/goimports"]]

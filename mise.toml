@@ -1,15 +1,11 @@
 [tools]
 jactionlint = "latest"
-"github:alecthomas/go-check-sumtype" = "latest"
 "packslip:nnutter/mdlint" = { version = "latest", "minimum_release_age" = "0" }
 "packslip:nnutter/timber" = { version = "latest", "minimum_release_age" = "0" }
 "github:securego/gosec" = "latest"
 betterleaks = "latest"
 go = "latest"
-"go:github.com/kisielk/errcheck" = "latest"
 "go:github.com/kojah/gohawk" = "latest"
-"go:github.com/nnutter/testifylint" = { version = "latest", "minimum_release_age" = "0" }
-"go:go.uber.org/nilaway/cmd/nilaway" = "latest"
 "go:golang.org/x/tools/cmd/goimports" = "latest"
 "go:golang.org/x/vuln/cmd/govulncheck" = "latest"
 gofumpt = "latest"
