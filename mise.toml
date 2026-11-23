@@ -1,8 +1,8 @@
 [tools]
 jactionlint = "latest"
 "github:alecthomas/go-check-sumtype" = "latest"
-"github:nnutter/mdlint" = { version = "latest", "minimum_release_age" = "0" }
-"github:nnutter/timber" = { version = "latest", "minimum_release_age" = "0" }
+"packslip:nnutter/mdlint" = { version = "latest", "minimum_release_age" = "0" }
+"packslip:nnutter/timber" = { version = "latest", "minimum_release_age" = "0" }
 "github:securego/gosec" = "latest"
 betterleaks = "latest"
 go = "latest"

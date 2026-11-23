@@ -89,94 +89,6 @@ checksum = "sha256:7bdf4bcaecadbc6ccf97d7d60dd0d164c2b4a076f27b360a8ebf9e2633384
 url = "https://github.com/alecthomas/go-check-sumtype/releases/download/v0.5.0/go-check-sumtype-0.5.0-windows-amd64.tar.gz"
 url_api = "https://api.github.com/repos/alecthomas/go-check-sumtype/releases/assets/533663836"
 
-[[tools."github:nnutter/mdlint"]]
-version = "0.4.4"
-backend = "github:nnutter/mdlint"
-specifiers = ["latest"]
-
-[tools."github:nnutter/mdlint"."platforms.linux-arm64"]
-checksum = "sha256:de0821efb99e633723a3785acc877383826692262ff3f67e76051bd4b2a9b00c"
-url = "https://github.com/nnutter/mdlint/releases/download/v0.4.4/mdlint-linux-aarch64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/mdlint/releases/assets/696284146"
-provenance = "github-attestations"
-
-[tools."github:nnutter/mdlint"."platforms.linux-arm64-musl"]
-checksum = "sha256:f1aa7ff4af612e9e8110b72b1f959fc146381178fb923fcbaecee759934133c1"
-url = "https://github.com/nnutter/mdlint/releases/download/v0.4.4/mdlint-linux-aarch64-musl.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/mdlint/releases/assets/696283962"
-provenance = "github-attestations"
-
-[tools."github:nnutter/mdlint"."platforms.linux-x64"]
-checksum = "sha256:4e81e01dbc3f894fd2cee355d38e8a2f43ffc27243dd1257e5eee3bf08f11d75"
-url = "https://github.com/nnutter/mdlint/releases/download/v0.4.4/mdlint-linux-x86_64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/mdlint/releases/assets/696284698"
-provenance = "github-attestations"
-
-[tools."github:nnutter/mdlint"."platforms.linux-x64-musl"]
-checksum = "sha256:f25cb3439f1edf67b53606acac549e5d4c8b3bab536bb57e3c0c6e4578f19465"
-url = "https://github.com/nnutter/mdlint/releases/download/v0.4.4/mdlint-linux-x86_64-musl.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/mdlint/releases/assets/696284620"
-provenance = "github-attestations"
-
-[tools."github:nnutter/mdlint"."platforms.macos-arm64"]
-checksum = "sha256:fe55e59953ecbdc71191bfed202a07b54578158e7ff898e8cedcaac650d5655a"
-url = "https://github.com/nnutter/mdlint/releases/download/v0.4.4/mdlint-macos-aarch64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/mdlint/releases/assets/696285699"
-provenance = "github-attestations"
-
-[tools."github:nnutter/mdlint"."platforms.macos-x64"]
-checksum = "sha256:3dada344ea2323f157e7d2af1ddff5d73b3c6f319bc8493ab96591b835b47343"
-url = "https://github.com/nnutter/mdlint/releases/download/v0.4.4/mdlint-macos-x86_64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/mdlint/releases/assets/696285555"
-provenance = "github-attestations"
-
-[tools."github:nnutter/mdlint"."platforms.windows-x64"]
-checksum = "sha256:cd7a45066c55997f9ad7fd51f2ec8f27e7d90f3fcf0f4a52091e20600ea10001"
-url = "https://github.com/nnutter/mdlint/releases/download/v0.4.4/mdlint-windows-x86_64.exe"
-url_api = "https://api.github.com/repos/nnutter/mdlint/releases/assets/696288485"
-provenance = "github-attestations"
-
-[[tools."github:nnutter/timber"]]
-version = "0.26.1"
-backend = "github:nnutter/timber"
-specifiers = ["latest"]
-
-[tools."github:nnutter/timber"."platforms.linux-arm64"]
-checksum = "sha256:1cfc63c610a3253421e9223e57e1222a69a5b82322757da750de1994ff662b8a"
-url = "https://github.com/nnutter/timber/releases/download/v0.26.1/timber_v0.26.1_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/773942856"
-provenance = "github-attestations"
-
-[tools."github:nnutter/timber"."platforms.linux-arm64-musl"]
-checksum = "sha256:1cfc63c610a3253421e9223e57e1222a69a5b82322757da750de1994ff662b8a"
-url = "https://github.com/nnutter/timber/releases/download/v0.26.1/timber_v0.26.1_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/773942856"
-provenance = "github-attestations"
-
-[tools."github:nnutter/timber"."platforms.linux-x64"]
-checksum = "sha256:65880784de1264ae29ae091e378d5bc5ad0a3bed593ae72e65b1c294df5a8e0d"
-url = "https://github.com/nnutter/timber/releases/download/v0.26.1/timber_v0.26.1_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/773942853"
-provenance = "github-attestations"
-
-[tools."github:nnutter/timber"."platforms.linux-x64-musl"]
-checksum = "sha256:65880784de1264ae29ae091e378d5bc5ad0a3bed593ae72e65b1c294df5a8e0d"
-url = "https://github.com/nnutter/timber/releases/download/v0.26.1/timber_v0.26.1_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/773942853"
-provenance = "github-attestations"
-
-[tools."github:nnutter/timber"."platforms.macos-arm64"]
-checksum = "sha256:52687516403d2572c08ef43f73375568aea3b96f570443258a0d0f7a5b2ad306"
-url = "https://github.com/nnutter/timber/releases/download/v0.26.1/timber_v0.26.1_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/773942851"
-provenance = "github-attestations"
-
-[tools."github:nnutter/timber"."platforms.macos-x64"]
-checksum = "sha256:df5e397f5ae5c9a31ae60bdbb845a1be293760efc97d1f25ace1ac8cf9294057"
-url = "https://github.com/nnutter/timber/releases/download/v0.26.1/timber_v0.26.1_darwin_amd64.tar.gz"
-url_api = "https://api.github.com/repos/nnutter/timber/releases/assets/773942855"
-provenance = "github-attestations"
-
 [[tools."github:securego/gosec"]]
 version = "2.30.0"
 backend = "github:securego/gosec"
@@ -414,6 +326,94 @@ checksum = "sha256:e939dd8c0eeeb620e70d30aa9aa21c671be078876660a831a82d07e372f0f
 url = "https://github.com/jdx/jactionlint/releases/download/v2.6.0/jactionlint_2.6.0_windows_amd64.zip"
 signer = "sigstore-oidc:https://github.com/jdx/jactionlint/.github/workflows/release.yaml"
 repository_ids = { repository = "1404951382" }
+
+[[tools."packslip:nnutter/mdlint"]]
+version = "0.4.5"
+backend = "packslip:nnutter/mdlint"
+specifiers = ["latest"]
+
+[tools."packslip:nnutter/mdlint"."platforms.linux-arm64"]
+checksum = "sha256:2cc8d015685434ee943acda1c30f5322b43a043fa4f2428cb9f24451e9ea6219"
+url = "https://github.com/nnutter/mdlint/releases/download/v0.4.5/mdlint-linux-aarch64.tar.gz"
+signer = "sigstore-oidc:https://github.com/nnutter/mdlint/.github/workflows/tag.yml"
+repository_ids = { repository = "1408036718" }
+
+[tools."packslip:nnutter/mdlint"."platforms.linux-arm64-musl"]
+checksum = "sha256:81436df2349e0a2c525dd0566487f5db68fe103baf1e1f1c3c9adf9a00879cfb"
+url = "https://github.com/nnutter/mdlint/releases/download/v0.4.5/mdlint-linux-aarch64-musl.tar.gz"
+signer = "sigstore-oidc:https://github.com/nnutter/mdlint/.github/workflows/tag.yml"
+repository_ids = { repository = "1408036718" }
+
+[tools."packslip:nnutter/mdlint"."platforms.linux-x64"]
+checksum = "sha256:ce58622064dc50fc751a30747e6e9695e286f9db219771b2e147867a425557ac"
+url = "https://github.com/nnutter/mdlint/releases/download/v0.4.5/mdlint-linux-x86_64.tar.gz"
+signer = "sigstore-oidc:https://github.com/nnutter/mdlint/.github/workflows/tag.yml"
+repository_ids = { repository = "1408036718" }
+
+[tools."packslip:nnutter/mdlint"."platforms.linux-x64-musl"]
+checksum = "sha256:6a01185fd7e7f6485b929bf82957241a6e126b4f0ca55d02a3b3328d6590d935"
+url = "https://github.com/nnutter/mdlint/releases/download/v0.4.5/mdlint-linux-x86_64-musl.tar.gz"
+signer = "sigstore-oidc:https://github.com/nnutter/mdlint/.github/workflows/tag.yml"
+repository_ids = { repository = "1408036718" }
+
+[tools."packslip:nnutter/mdlint"."platforms.macos-arm64"]
+checksum = "sha256:20e615c9435a242ae5dc4600e4f7be880c8482471819e1664e2c436f2c8de90d"
+url = "https://github.com/nnutter/mdlint/releases/download/v0.4.5/mdlint-macos-aarch64.tar.gz"
+signer = "sigstore-oidc:https://github.com/nnutter/mdlint/.github/workflows/tag.yml"
+repository_ids = { repository = "1408036718" }
+
+[tools."packslip:nnutter/mdlint"."platforms.macos-x64"]
+checksum = "sha256:9d2308e182603288ea60808656517c0a8847aa689037d056080958d140960cda"
+url = "https://github.com/nnutter/mdlint/releases/download/v0.4.5/mdlint-macos-x86_64.tar.gz"
+signer = "sigstore-oidc:https://github.com/nnutter/mdlint/.github/workflows/tag.yml"
+repository_ids = { repository = "1408036718" }
+
+[tools."packslip:nnutter/mdlint"."platforms.windows-x64"]
+checksum = "sha256:a5f2ff5d4ee7d299a868927d1bb348505c038e09c56ed7a95f4170519daba698"
+url = "https://github.com/nnutter/mdlint/releases/download/v0.4.5/mdlint-windows-x86_64.exe.zip"
+signer = "sigstore-oidc:https://github.com/nnutter/mdlint/.github/workflows/tag.yml"
+repository_ids = { repository = "1408036718" }
+
+[[tools."packslip:nnutter/timber"]]
+version = "0.26.2"
+backend = "packslip:nnutter/timber"
+specifiers = ["latest"]
+
+[tools."packslip:nnutter/timber"."platforms.linux-arm64"]
+checksum = "sha256:f6a128f3b8400ce1e12ddb843f34510eb99c3aa475a58b1780b914ead59f602e"
+url = "https://github.com/nnutter/timber/releases/download/v0.26.2/timber_v0.26.2_linux_arm64.tar.gz"
+signer = "sigstore-oidc:https://github.com/nnutter/timber/.github/workflows/release.yaml"
+repository_ids = { repository = "1218412975" }
+
+[tools."packslip:nnutter/timber"."platforms.linux-arm64-musl"]
+checksum = "sha256:f6a128f3b8400ce1e12ddb843f34510eb99c3aa475a58b1780b914ead59f602e"
+url = "https://github.com/nnutter/timber/releases/download/v0.26.2/timber_v0.26.2_linux_arm64.tar.gz"
+signer = "sigstore-oidc:https://github.com/nnutter/timber/.github/workflows/release.yaml"
+repository_ids = { repository = "1218412975" }
+
+[tools."packslip:nnutter/timber"."platforms.linux-x64"]
+checksum = "sha256:8b503c0b29421a857864dd1b2357fff68e81525c220130f38c1522525beb8040"
+url = "https://github.com/nnutter/timber/releases/download/v0.26.2/timber_v0.26.2_linux_amd64.tar.gz"
+signer = "sigstore-oidc:https://github.com/nnutter/timber/.github/workflows/release.yaml"
+repository_ids = { repository = "1218412975" }
+
+[tools."packslip:nnutter/timber"."platforms.linux-x64-musl"]
+checksum = "sha256:8b503c0b29421a857864dd1b2357fff68e81525c220130f38c1522525beb8040"
+url = "https://github.com/nnutter/timber/releases/download/v0.26.2/timber_v0.26.2_linux_amd64.tar.gz"
+signer = "sigstore-oidc:https://github.com/nnutter/timber/.github/workflows/release.yaml"
+repository_ids = { repository = "1218412975" }
+
+[tools."packslip:nnutter/timber"."platforms.macos-arm64"]
+checksum = "sha256:5bc528cdf6bcdcbca7011467e160733b887a4b2e249b5aded62c68da69a6af24"
+url = "https://github.com/nnutter/timber/releases/download/v0.26.2/timber_v0.26.2_darwin_arm64.tar.gz"
+signer = "sigstore-oidc:https://github.com/nnutter/timber/.github/workflows/release.yaml"
+repository_ids = { repository = "1218412975" }
+
+[tools."packslip:nnutter/timber"."platforms.macos-x64"]
+checksum = "sha256:c848ef991e55b00fac2fadd92b617d497f02166c9460f58fd07fbd9efccd754f"
+url = "https://github.com/nnutter/timber/releases/download/v0.26.2/timber_v0.26.2_darwin_amd64.tar.gz"
+signer = "sigstore-oidc:https://github.com/nnutter/timber/.github/workflows/release.yaml"
+repository_ids = { repository = "1218412975" }
 
 [[tools.pkl]]
 version = "0.33.1"
