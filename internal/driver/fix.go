@@ -65,11 +65,15 @@ func validateFixFile(name string, file *fixFile, printDiff bool) error {
 	return nil
 }
 
-func collectFixes(graph *checker.Graph, sources map[*token.File][]byte) (map[string]*fixFile, error) {
+// collectFixes gathers the suggested-fix edits of every root action, along
+// with the name of the analyzer that suggested each edit, so -fix-commits
+// can group the commits by analyzer.
+func collectFixes(graph *checker.Graph, sources map[*token.File][]byte) (map[string]*fixFile, map[string]map[string]bool, error) {
 	files := make(map[string]*fixFile)
+	analyzersByFile := make(map[string]map[string]bool)
 	for act := range graph.All() {
 		if act.Err != nil {
-			return nil, fmt.Errorf("analysis failed; suggested fixes not applied")
+			return nil, nil, fmt.Errorf("analysis failed; suggested fixes not applied")
 		}
 	}
 	for act := range graph.All() {
@@ -81,40 +85,59 @@ func collectFixes(graph *checker.Graph, sources map[*token.File][]byte) (map[str
 				continue
 			}
 			for _, edit := range diagnostic.SuggestedFixes[0].TextEdits {
-				if err := collectFixEdit(files, sources, act.Package.Fset, edit, diagnostic.Message); err != nil {
-					return nil, err
+				name, err := collectFixEdit(files, sources, act.Package.Fset, edit, diagnostic.Message)
+				if err != nil {
+					return nil, nil, err
 				}
+				recordFixAnalyzer(analyzersByFile, name, act.Analyzer.Name)
 			}
 		}
 	}
-	return files, nil
+	return files, analyzersByFile, nil
 }
 
-func collectFixEdit(files map[string]*fixFile, sources map[*token.File][]byte, fset *token.FileSet, edit analysis.TextEdit, message string) error {
+func recordFixAnalyzer(analyzersByFile map[string]map[string]bool, name, analyzer string) {
+	names := analyzersByFile[name]
+	if names == nil {
+		names = make(map[string]bool)
+		analyzersByFile[name] = names
+	}
+	names[analyzer] = true
+}
+
+func mergeFixAnalyzers(dst, src map[string]map[string]bool) {
+	for name, analyzers := range src {
+		for analyzer := range analyzers {
+			recordFixAnalyzer(dst, name, analyzer)
+		}
+	}
+}
+
+func collectFixEdit(files map[string]*fixFile, sources map[*token.File][]byte, fset *token.FileSet, edit analysis.TextEdit, message string) (string, error) {
 	file := fset.File(edit.Pos)
 	if file == nil {
-		return fmt.Errorf("invalid suggested fix for %s", message)
+		return "", fmt.Errorf("invalid suggested fix for %s", message)
 	}
 	if fset.File(edit.End) != file {
-		return fmt.Errorf("invalid suggested fix for %s", message)
+		return "", fmt.Errorf("invalid suggested fix for %s", message)
 	}
 	if edit.End < edit.Pos {
-		return fmt.Errorf("invalid suggested fix for %s", message)
+		return "", fmt.Errorf("invalid suggested fix for %s", message)
 	}
 	name := file.Name()
 	source, ok := sources[file]
 	if !ok {
-		return fmt.Errorf("no analyzed source for %s", name)
+		return "", fmt.Errorf("no analyzed source for %s", name)
 	}
 	f := files[name]
 	if f == nil {
 		f = &fixFile{original: source}
 		files[name] = f
 	} else if !bytes.Equal(f.original, source) {
-		return fmt.Errorf("inconsistent analyzed source for %s", name)
+		return "", fmt.Errorf("inconsistent analyzed source for %s", name)
 	}
 	f.edits = append(f.edits, fixEdit{file.Offset(edit.Pos), file.Offset(edit.End), string(edit.NewText)})
-	return nil
+	return name, nil
 }
 
 func prepareFixFile(name string, f *fixFile) error {
@@ -226,6 +249,144 @@ func gitRepositoryEnv(key string) bool {
 	default:
 		return false
 	}
+}
+
+func validateFixCommits(opts Options) error {
+	if !opts.FixCommits {
+		return nil
+	}
+	if !opts.Fix {
+		return fmt.Errorf("-fix-commits requires -fix")
+	}
+	if opts.Diff {
+		return fmt.Errorf("-fix-commits cannot be used with -diff")
+	}
+	return nil
+}
+
+// fixCommitGroup is one -fix-commits commit: the changed files that one
+// analyzer (or one combination of analyzers) fixed.
+type fixCommitGroup struct {
+	message string
+	names   []string
+}
+
+func commitFinalFixes(original, state map[string][]byte, analyzersByFile map[string]map[string]bool, cwd string, enabled bool) error {
+	if !enabled {
+		return nil
+	}
+	for _, group := range fixCommitGroups(changedFixFiles(original, state), analyzersByFile, cwd) {
+		if err := commitFixGroup(group, cwd); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// fixCommitGroups groups changed files by the analyzers that fixed them,
+// in analyzer order, so each commit holds one analyzer's fixes.
+func fixCommitGroups(names []string, analyzersByFile map[string]map[string]bool, cwd string) []fixCommitGroup {
+	namesByKey := make(map[string][]string)
+	messageByKey := make(map[string]string)
+	var keys []string
+	for _, name := range names {
+		analyzers := sortedFixAnalyzers(analyzersByFile[name])
+		key := strings.Join(analyzers, "+")
+		if _, ok := namesByKey[key]; !ok {
+			messageByKey[key] = fixCommitMessage(analyzers, name, cwd)
+			keys = append(keys, key)
+		}
+		namesByKey[key] = append(namesByKey[key], name)
+	}
+	slices.Sort(keys)
+	groups := make([]fixCommitGroup, 0, len(keys))
+	for _, key := range keys {
+		groups = append(groups, fixCommitGroup{message: messageByKey[key], names: namesByKey[key]})
+	}
+	return groups
+}
+
+func sortedFixAnalyzers(analyzers map[string]bool) []string {
+	names := make([]string, 0, len(analyzers))
+	for name := range analyzers {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+	return names
+}
+
+func fixCommitMessage(analyzers []string, name, cwd string) string {
+	if len(analyzers) == 0 {
+		return "Refactor: Apply constable fixes to " + relativePath(cwd, name)
+	}
+	return "Refactor: Apply constable's " + strings.Join(analyzers, " + ") + " fixes"
+}
+
+func changedFixFiles(original, state map[string][]byte) []string {
+	var names []string
+	for name, result := range state {
+		if !bytes.Equal(original[name], result) {
+			names = append(names, name)
+		}
+	}
+	slices.Sort(names)
+	return names
+}
+
+func commitFixGroup(group fixCommitGroup, cwd string) error {
+	top, err := fixRepoTop(cwd)
+	if err != nil {
+		return err
+	}
+	specs, err := fixGroupPathspecs(group.names, top)
+	if err != nil {
+		return err
+	}
+	if _, err := runGitCommand(cwd, append([]string{"add", "--"}, specs...)...); err != nil {
+		return fmt.Errorf("stage fixes for %q: %w", group.message, err)
+	}
+	commitArgs := append([]string{"commit", "-m", group.message, "--"}, specs...)
+	if _, err := runGitCommand(cwd, commitArgs...); err != nil {
+		return fmt.Errorf("commit fixes for %q: %w", group.message, err)
+	}
+	return nil
+}
+
+func fixRepoTop(cwd string) (string, error) {
+	out, err := runGitCommand(cwd, "rev-parse", "--show-toplevel")
+	if err != nil {
+		return "", fmt.Errorf("find repository for fixes: %w", err)
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
+// fixGroupPathspecs names each file relative to the repository top, as a
+// literal pathspec, so a group spanning directories commits exactly its
+// files and no other staged change joins it.
+func fixGroupPathspecs(names []string, top string) ([]string, error) {
+	specs := make([]string, 0, len(names))
+	for _, name := range names {
+		abs, err := filepath.Abs(name)
+		if err != nil {
+			return nil, fmt.Errorf("resolve %s: %w", name, err)
+		}
+		rel, err := filepath.Rel(top, abs)
+		if err != nil {
+			return nil, fmt.Errorf("resolve %s: %w", name, err)
+		}
+		specs = append(specs, ":(literal)"+filepath.ToSlash(rel))
+	}
+	return specs, nil
+}
+
+func runGitCommand(dir string, args ...string) ([]byte, error) {
+	cmd := exec.Command("git", append([]string{"--no-optional-locks", "-C", dir}, args...)...) // #nosec G204 -- Args are fixed Git verbs, a fixed message, and a literal pathspec for an analyzed file.
+	cmd.Env = gitEnvWithoutRepository(os.Environ())
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(string(out)))
+	}
+	return out, nil
 }
 
 func outputFixFile(name string, f *fixFile, cwd string, printDiff bool) error {

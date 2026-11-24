@@ -281,6 +281,76 @@ func TestCLIPredicatesPass(t *testing.T) {
 	assert.Empty(t, output)
 }
 
+func TestCLIUnmodifiedFail(t *testing.T) {
+	binary := buildBinary(t)
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/unmodified",
+			"",
+			"go 1.26",
+		},
+		Files: map[string][]string{"a.go": {
+			"package unmodified",
+			"",
+			"var answer = 42",
+			"",
+			"func Use() int { return answer }",
+		}},
+	})
+
+	output, err := runConstable(t, binary, moduleDir, "-unmodified")
+
+	require.Error(t, err)
+	assert.Contains(t, output, "variable answer is never modified and should be a constant")
+	assert.NotContains(t, output, moduleDir)
+}
+
+func TestCLIUnmodifiedFixCommits(t *testing.T) {
+	binary := buildBinary(t)
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/unmodifiedfix",
+			"",
+			"go 1.26",
+		},
+		Files: map[string][]string{"a.go": {
+			"package unmodifiedfix",
+			"",
+			"var answer = 42",
+			"",
+			"func Use() int { return answer }",
+		}},
+	})
+	git := func(args ...string) string {
+		t.Helper()
+		command := exec.Command("git", args...)
+		command.Dir = moduleDir
+		output, err := command.CombinedOutput()
+		require.NoError(t, err, string(output))
+		return string(output)
+	}
+	git("init", "-q")
+	git("config", "user.email", "test@example.com")
+	git("config", "user.name", "Test")
+	git("add", ".")
+	git("commit", "-qm", "initial")
+
+	output, err := runConstable(t, binary, moduleDir, "-unmodified", "-fix", "-fix-commits")
+	require.NoError(t, err, output)
+	assert.Empty(t, output)
+
+	data, err := os.ReadFile(filepath.Join(moduleDir, "a.go"))
+	require.NoError(t, err)
+	assert.Contains(t, string(data), "const answer = 42")
+	assert.NotContains(t, string(data), "var answer")
+
+	subjects := strings.Split(strings.TrimSpace(git("log", "--format=%s")), "\n")
+	require.Len(t, subjects, 2)
+	assert.Equal(t, "Refactor: Apply constable's unmodified fixes", subjects[0])
+	assert.Equal(t, "initial", subjects[1])
+	assert.Empty(t, strings.TrimSpace(git("status", "--porcelain")))
+}
+
 func TestCLIComplexityPass(t *testing.T) {
 	binary := buildBinary(t)
 

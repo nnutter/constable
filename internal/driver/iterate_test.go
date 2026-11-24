@@ -30,8 +30,10 @@ func fixRepoFiles(t *testing.T, files map[string]string) string {
 		require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(source), 0o644))
 	}
 	runGitInput(t, dir, "", "init", "-q")
+	runGitInput(t, dir, "", "config", "user.email", "test@example.com")
+	runGitInput(t, dir, "", "config", "user.name", "Test")
 	runGitInput(t, dir, "", "add", ".")
-	runGitInput(t, dir, "", "-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-qm", "initial")
+	runGitInput(t, dir, "", "commit", "-qm", "initial")
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))

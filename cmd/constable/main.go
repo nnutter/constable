@@ -12,6 +12,7 @@ import (
 	"github.com/nnutter/constable/internal/analysis/sumtype"
 	"github.com/nnutter/constable/internal/analysis/testify"
 	"github.com/nnutter/constable/internal/analysis/testifylint"
+	"github.com/nnutter/constable/internal/analysis/unmodified"
 	"github.com/nnutter/constable/internal/driver"
 )
 
@@ -27,6 +28,7 @@ func main() {
 		nonmutating.Analyzer,
 		pure.Analyzer,
 		lean.Analyzer,
+		unmodified.Analyzer,
 		methodical.Analyzer,
 		predicates.Analyzer,
 		testify.Analyzer,

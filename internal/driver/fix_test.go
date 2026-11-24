@@ -87,8 +87,10 @@ func TestFixes(t *testing.T) {
 				runGit(t, dir, args...)
 			}
 			git("init", "-q")
+			git("config", "user.email", "test@example.com")
+			git("config", "user.name", "Test")
 			git("add", ".")
-			git("-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-qm", "initial")
+			git("commit", "-qm", "initial")
 			a := fixAnalyzer(path, tc.fail, tc.conflict, tc.stale)
 			oldout, olderr := os.Stdout, os.Stderr
 			stdout, err := os.CreateTemp(t.TempDir(), "stdout")
