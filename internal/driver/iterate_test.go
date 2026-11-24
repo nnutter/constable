@@ -146,6 +146,70 @@ func TestMethodicalCrossFileFix(t *testing.T) {
 	}
 }
 
+// orphanImportAnalyzer mimics embedded analyzers such as testifylint, whose
+// suggested fixes rewrite a call without touching the import block: an
+// error-is-as fix replaces errors.Is(err, target) with a direct comparison,
+// which can leave "errors" as the file's only, now unused, import.
+func orphanImportAnalyzer() *analysis.Analyzer {
+	return &analysis.Analyzer{Name: "orphanimport", Doc: "rewrite errors.Is calls", Run: func(pass *analysis.Pass) (any, error) {
+		for _, file := range pass.Files {
+			ast.Inspect(file, func(node ast.Node) bool {
+				call, ok := node.(*ast.CallExpr)
+				if !ok {
+					return true
+				}
+				sel, ok := call.Fun.(*ast.SelectorExpr)
+				if !ok {
+					return true
+				}
+				if sel.Sel.Name != "Is" {
+					return true
+				}
+				id, ok := sel.X.(*ast.Ident)
+				if !ok {
+					return true
+				}
+				if id.Name != "errors" {
+					return true
+				}
+				pass.Report(analysis.Diagnostic{
+					Pos:     call.Pos(),
+					Message: "rewrite errors.Is",
+					SuggestedFixes: []analysis.SuggestedFix{{
+						Message:   "use direct comparison",
+						TextEdits: []analysis.TextEdit{{Pos: call.Pos(), End: call.End(), NewText: []byte("err == ErrSentinel")}},
+					}},
+				})
+				return true
+			})
+		}
+		return nil, nil
+	}}
+}
+
+func TestFixOrphanedImport(t *testing.T) {
+	source := "package fix\n\nimport \"errors\"\n\ntype sentinelError string\n\nfunc (e sentinelError) Error() string { return string(e) }\n\nconst ErrSentinel = sentinelError(\"sentinel\")\n\nfunc Check(err error) bool { return errors.Is(err, ErrSentinel) }\n"
+	fixRepo(t, source)
+	// Diff mode first: it must not write, so the write-mode run below still
+	// sees the original source.
+	code, output, diagnostics := runFix(t, orphanImportAnalyzer(), true)
+	require.Equal(t, 0, code, "diagnostics: %s", diagnostics)
+	require.NotContains(t, diagnostics, "imported and not used")
+	require.Contains(t, output, "-import \"errors\"")
+	data, err := os.ReadFile("fix.go")
+	require.NoError(t, err)
+	require.Equal(t, source, string(data))
+
+	code, output, diagnostics = runFix(t, orphanImportAnalyzer(), false)
+	require.Equal(t, 0, code, "diagnostics: %s", diagnostics)
+	require.Empty(t, output)
+	require.NotContains(t, diagnostics, "imported and not used")
+	data, err = os.ReadFile("fix.go")
+	require.NoError(t, err)
+	require.NotContains(t, string(data), "\"errors\"")
+	require.Contains(t, string(data), "err == ErrSentinel")
+}
+
 func TestFixMoreThan100Passes(t *testing.T) {
 	source := "package fix\nvar Count = 0\n"
 	fixRepo(t, source)

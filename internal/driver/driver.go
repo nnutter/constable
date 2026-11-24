@@ -599,6 +599,7 @@ func runFixes(args []string, analyzers []*analysis.Analyzer, opts Options, cwd s
 			log.Print(err)
 			return outputResult(graph, cwd, opts, 0, true, overlay)
 		}
+		repairImports(next, files)
 		if err := checkFixProgress(next, original, history, changed, pass+1, passLimit); err != nil {
 			log.Print(err)
 			return outputResult(graph, cwd, opts, 0, true, overlay)
