@@ -36,6 +36,7 @@ type Options struct {
 	IncludeTests bool
 	Fix          bool
 	Diff         bool
+	FixCommits   bool
 
 	// AfterLoad runs with the packages that the driver loaded, before any
 	// analyzer runs. A flag whose default names a package is set here, because
@@ -153,6 +154,7 @@ func Main(version string, hooks Hooks, analyzers ...*analysis.Analyzer) {
 	flag.IntVar(&opts.Context, "c", -1, "display offending line with this many lines of context")
 	flag.BoolVar(&opts.Fix, "fix", false, "apply all suggested fixes")
 	flag.BoolVar(&opts.Diff, "diff", false, "with -fix, don't update the files, but print a unified diff")
+	flag.BoolVar(&opts.FixCommits, "fix-commits", false, "with -fix, commit each fixed file separately with a Refactor: message")
 	flag.BoolVar(&opts.IncludeTests, "test", true, "indicates whether test files should be analyzed, too")
 	includeGenerated := flag.Bool("include-generated", false, "report in generated files, which constable skips by default")
 
@@ -483,6 +485,11 @@ func Run(args []string, analyzers []*analysis.Analyzer, opts Options) (exitcode 
 		return 1
 	}
 
+	if err := validateFixCommits(opts); err != nil {
+		log.Print(err)
+		return 1
+	}
+
 	if opts.Fix {
 		return runFixes(args, analyzers, opts, cwd)
 	}
@@ -553,6 +560,7 @@ func overlayAnalyzers(analyzers []*analysis.Analyzer, overlay map[string][]byte)
 
 func runFixes(args []string, analyzers []*analysis.Analyzer, opts Options, cwd string) int {
 	original := make(map[string][]byte)
+	analyzersByFile := make(map[string]map[string]bool)
 	state := make(map[string][]byte)
 	history := []map[string][]byte{maps.Clone(state)}
 	var graph *checker.Graph
@@ -569,13 +577,18 @@ func runFixes(args []string, analyzers []*analysis.Analyzer, opts Options, cwd s
 		if pass == 0 {
 			passLimit = fixPassLimit(sources)
 		}
-		files, err := collectFixes(graph, sources)
+		files, passAnalyzers, err := collectFixes(graph, sources)
 		if err != nil {
 			log.Print(err)
 			return outputResult(graph, cwd, opts, 0, true, overlay)
 		}
+		mergeFixAnalyzers(analyzersByFile, passAnalyzers)
 		if len(files) == 0 {
 			if err := outputFinalFixes(original, state, cwd, opts.Diff); err != nil {
+				log.Print(err)
+				return outputResult(graph, cwd, opts, 0, true, overlay)
+			}
+			if err := commitFinalFixes(original, state, analyzersByFile, cwd, opts.FixCommits); err != nil {
 				log.Print(err)
 				return outputResult(graph, cwd, opts, 0, true, overlay)
 			}
@@ -586,6 +599,7 @@ func runFixes(args []string, analyzers []*analysis.Analyzer, opts Options, cwd s
 			log.Print(err)
 			return outputResult(graph, cwd, opts, 0, true, overlay)
 		}
+		repairImports(next, files)
 		if err := checkFixProgress(next, original, history, changed, pass+1, passLimit); err != nil {
 			log.Print(err)
 			return outputResult(graph, cwd, opts, 0, true, overlay)

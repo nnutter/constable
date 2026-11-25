@@ -141,6 +141,21 @@ Methods, struct fields, unused parameters, and exported symbols are not reported
 Constants in a group that uses `iota` or hides a value are not reported either, because removing one member would renumber the rest.
 Unused parameters may exist to satisfy an interface, and exported symbols may be used outside the package, so package-local evidence cannot prove either one dead.
 
+## Unmodified
+
+The unmodified analyzer reports a variable declared with `var` that is never modified after its initialization and whose initializer is a constant expression, so the declaration can use `const` instead.
+
+```go
+var answer = 42 // reported: use const answer = 42
+```
+
+The check covers package-level and local `var` declarations.
+It does not report a variable that is assigned later, incremented, has its address taken, is mutated through a pointer-receiver method, or is initialized from a non-constant expression.
+Exported package-level variables are not reported, because another package may assign to them.
+
+A variable that must stay `var` can be suppressed with a `//nolint:unmodified` comment on its declaration, or above the declaration block to suppress every variable in it.
+A bare `//nolint` does not suppress this analyzer; the comment must name `unmodified`.
+
 ## Fixes
 
 `-fix` applies the fixes that the analyzers suggest, and `-fix -diff` prints the change instead of writing it.
@@ -150,9 +165,11 @@ constable -fix ./...
 constable -fix -diff ./...
 ```
 
-The methodical and lean analyzers suggest fixes.
+The methodical, lean, and unmodified analyzers suggest fixes.
 Methodical places every method of a reported type directly after the type declaration, in order, and a method that lives in another file moves into the file that declares its type.
 Lean deletes unused unexported declarations and removes imports that only the deleted declaration used.
+Unmodified replaces `var` with `const` for a reported variable.
+A grouped `var` declaration only receives that fix when every variable in the declaration can become a constant; otherwise the variables are still reported, but without a suggested fix.
 
 A move fixes the import blocks of both files:
 
@@ -166,6 +183,18 @@ A move is conservative, because the analyzer must be sure that the result compil
 
 A fix writes only files that Git tracks and that have no changes, so `git checkout` recovers a fix that went wrong.
 Diagnostics that remain after the fixes are printed, and the command exits unsuccessfully.
+
+With `-fix-commits`, constable commits the fixes itself, one commit per analyzer:
+
+```sh
+constable -fix -fix-commits ./...
+```
+
+Each commit message is `Refactor: Apply constable's <analyzer> fixes`, and each commit contains every file that analyzer fixed.
+A file that several analyzers fixed lands in one commit naming them all, such as `Refactor: Apply constable's lean + unmodified fixes`.
+`-fix-commits` requires `-fix` and cannot be combined with `-diff`.
+No commit is created when no file changes or when applying the fixes fails.
+If Git cannot create a commit, for example because no author identity is configured or a hook rejects it, the command exits unsuccessfully.
 
 ## Embedded analyzers
 

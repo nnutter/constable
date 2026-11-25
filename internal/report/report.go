@@ -89,3 +89,7 @@ func UnusedVariable(name string) string {
 func UnusedConstant(name string) string {
 	return fmt.Sprintf("unused unexported constant %s is never used", name)
 }
+
+func UnmodifiedVariable(name string) string {
+	return fmt.Sprintf("variable %s is never modified and should be a constant", name)
+}

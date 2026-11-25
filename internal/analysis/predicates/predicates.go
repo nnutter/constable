@@ -60,18 +60,47 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 
 		ast.Inspect(file, func(node ast.Node) bool {
-			expr, ok := node.(*ast.BinaryExpr)
-			if !succeeded(ok) || !isLogicalExpr(expr) {
-				return true
-			}
-			// The first operand is always evaluated, so statement coverage
-			// can observe short-circuiting through the remaining calls.
-			checkOperand(pass, expr.Y)
+			checkNode(pass, node)
 			return true
 		})
 	}
 
 	return nil, nil
+}
+
+func checkNode(pass *analysis.Pass, node ast.Node) {
+	expr, ok := node.(*ast.BinaryExpr)
+	if succeeded(ok) && isLogicalExpr(expr) {
+		// The first operand is always evaluated, so statement coverage
+		// can observe short-circuiting through the remaining calls.
+		checkOperand(pass, expr.Y)
+	}
+	if sw, ok := node.(*ast.SwitchStmt); succeeded(ok) {
+		checkSwitch(pass, sw)
+	}
+}
+
+func checkSwitch(pass *analysis.Pass, sw *ast.SwitchStmt) {
+	if sw.Tag != nil {
+		return
+	}
+	if sw.Body == nil {
+		return
+	}
+	for _, stmt := range sw.Body.List {
+		clause, ok := stmt.(*ast.CaseClause)
+		if !succeeded(ok) {
+			continue
+		}
+		if clause.List == nil {
+			continue
+		}
+		// A tagless switch case list is an OR of its values, so the
+		// first value is always evaluated like the first operand of ||.
+		for _, operand := range clause.List[1:] {
+			checkOperand(pass, operand)
+		}
+	}
 }
 
 func checkOperand(pass *analysis.Pass, operand ast.Expr) {

@@ -132,3 +132,95 @@ func SingleAssign(a bool) {
 	c := a
 	_ = c
 }
+
+func SwitchVars(a, b bool) {
+	switch {
+	case a, b: // want "use predicate function instead of \"b\" in compound conditional"
+		println("both")
+	}
+}
+
+func SwitchPredicates() {
+	switch {
+	case isA(), isB():
+		println("both")
+	}
+}
+
+func SwitchVarFirst(a bool) {
+	switch {
+	case a, isB():
+		println("mixed")
+	}
+}
+
+func SwitchVarSecond(a bool) {
+	switch {
+	case isA(), a: // want "use predicate function instead of \"a\" in compound conditional"
+		println("mixed")
+	}
+}
+
+func SwitchNegated(a, b bool) {
+	switch {
+	case a, !b: // want "use predicate function instead of \"!b\" in compound conditional"
+		println("negated")
+	}
+}
+
+func SwitchBoolLiteral(a bool) {
+	switch {
+	case a, true:
+		println("literal")
+	}
+}
+
+func SwitchBoolLiteralFirst(a bool) {
+	switch {
+	case true, a: // want "use predicate function instead of \"a\" in compound conditional"
+		println("literal")
+	}
+}
+
+func SwitchSingleVar(a bool) {
+	switch {
+	case a:
+		println("single")
+	}
+}
+
+func SwitchThreeVars(a, b, c bool) {
+	switch {
+	case a, b, c: // want "use predicate function instead of \"b\" in compound conditional" "use predicate function instead of \"c\" in compound conditional"
+		println("three")
+	}
+}
+
+func SwitchComparisons(x, y, z int) bool {
+	switch {
+	case x != y, y != z, x != z: // want "use predicate function instead of \"y != z\" in compound conditional" "use predicate function instead of \"x != z\" in compound conditional"
+		return false
+	}
+	return true
+}
+
+func SwitchTagged(x int) {
+	switch x {
+	case 1, 2:
+		println("tagged")
+	}
+}
+
+type Repo struct {
+	Repo string
+	Base string
+	Key  string
+}
+
+func SwitchRepoFields(a, b Repo) bool {
+	switch {
+	case a.Repo != b.Repo, a.Base != b.Base, a.Key != b.Key: // want "use predicate function instead of \"a.Base != b.Base\" in compound conditional" "use predicate function instead of \"a.Key != b.Key\" in compound conditional"
+		return false
+	}
+	return true
+}

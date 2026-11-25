@@ -26,6 +26,8 @@ Further flags:
 - `-json` prints JSON and always exits `0`.
 - `-c N` prints N lines of source around each reported line.
 - `-fix` writes the fixes, and `-fix -diff` prints them as a diff and writes nothing.
+- `-fix -fix-commits` writes the fixes and commits them per analyzer as `Refactor: Apply constable's <analyzer> fixes`.
+  It cannot be combined with `-diff`.
 - `-<analyzer>=false` turns off one analyzer, for example `-complexity=false`.
 - `-flags` lists every flag, and `help <analyzer>` describes one analyzer.
 
@@ -125,6 +127,28 @@ It adds the imports that a moved method needs and removes the imports that the o
 Move a method by hand when the fix skips it.
 The fix skips a generated file, a file with build constraints or Go directives, a file that uses cgo, a file whose import block holds comments, a file with comments that no declaration owns, and a declaration that does not start its own line.
 The fix writes only a file that Git tracks and that has no changes, so `git checkout` recovers the file.
+
+### unmodified
+
+```text
+variable answer is never modified and should be a constant
+```
+
+Run the fix,
+
+```sh
+constable -fix -diff ./...   # read the change
+constable -fix ./...         # write the change
+```
+
+The fix replaces `var` with `const` for the reported variable.
+
+Change the declaration by hand when the fix skips it.
+The fix skips a grouped `var` declaration unless every variable in the declaration can become a constant.
+Exported package-level variables are not reported, because another package may assign to them.
+
+A variable that must stay `var` can be suppressed with a `//nolint:unmodified` comment on its declaration, or above the declaration block to suppress every variable in it.
+A bare `//nolint` does not suppress this analyzer; the comment must name `unmodified`.
 
 ### predicates
 
