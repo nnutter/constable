@@ -70,15 +70,19 @@ type declInfo struct {
 func run(pass *analysis.Pass) (any, error) {
 	mutated := mutatedObjects(pass)
 	specs, decls := collectSpecs(pass)
+	suppressed := suppressedDecls(pass)
 	markComplete(pass, specs, mutated)
 	markFixable(decls)
 	for _, spec := range specs {
-		reportSpec(pass, spec, mutated)
+		reportSpec(pass, spec, mutated, suppressed)
 	}
 	return nil, nil
 }
 
-func reportSpec(pass *analysis.Pass, spec *specInfo, mutated map[types.Object]bool) {
+func reportSpec(pass *analysis.Pass, spec *specInfo, mutated map[types.Object]bool, suppressed map[*ast.GenDecl]bool) {
+	if suppressed[spec.gen] {
+		return
+	}
 	for _, cand := range spec.names {
 		if !isEligible(pass, cand, mutated) {
 			continue

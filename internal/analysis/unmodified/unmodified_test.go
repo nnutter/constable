@@ -12,6 +12,10 @@ func TestAnalyzer(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), unmodified.Analyzer, "u")
 }
 
+func TestAnalyzerRespectsNoLint(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), unmodified.Analyzer, "n")
+}
+
 func TestAnalyzerSkipsGeneratedFiles(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), unmodified.Analyzer, "g")
 }

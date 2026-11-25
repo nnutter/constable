@@ -71,6 +71,16 @@ func TestFixSkipsPartialGroup(t *testing.T) {
 	require.Empty(t, findCaptured(t, diagnostics, "kept").edits, "partial group offered a whole-group fix")
 }
 
+func TestFixSkipsSuppressedVariable(t *testing.T) {
+	dir := t.TempDir()
+	writeUnmodifiedFixture(t, dir, "package p\n\n//nolint:unmodified\nvar suppressed = 1\n\nvar reported = 2\n\nfunc Use() int { return suppressed + reported }\n")
+	diagnostics := inspectUnmodified(t, dir)
+	for _, d := range diagnostics {
+		require.NotContains(t, d.message, "variable suppressed ")
+	}
+	require.NotEmpty(t, findCaptured(t, diagnostics, "reported").edits, "unsuppressed variable offered no fix")
+}
+
 func TestFixOffersCompleteGroup(t *testing.T) {
 	dir := t.TempDir()
 	writeUnmodifiedFixture(t, dir, "package p\n\nvar (\n\tfirst = 1\n\tsecond = 2\n)\n\nfunc Use() int { return first + second }\n")

@@ -153,6 +153,9 @@ The check covers package-level and local `var` declarations.
 It does not report a variable that is assigned later, incremented, has its address taken, is mutated through a pointer-receiver method, or is initialized from a non-constant expression.
 Exported package-level variables are not reported, because another package may assign to them.
 
+A variable that must stay `var` can be suppressed with a `//nolint:unmodified` comment on its declaration, or above the declaration block to suppress every variable in it.
+A bare `//nolint` does not suppress this analyzer; the comment must name `unmodified`.
+
 ## Fixes
 
 `-fix` applies the fixes that the analyzers suggest, and `-fix -diff` prints the change instead of writing it.

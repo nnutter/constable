@@ -147,6 +147,9 @@ Change the declaration by hand when the fix skips it.
 The fix skips a grouped `var` declaration unless every variable in the declaration can become a constant.
 Exported package-level variables are not reported, because another package may assign to them.
 
+A variable that must stay `var` can be suppressed with a `//nolint:unmodified` comment on its declaration, or above the declaration block to suppress every variable in it.
+A bare `//nolint` does not suppress this analyzer; the comment must name `unmodified`.
+
 ### predicates
 
 ```text
