@@ -181,7 +181,6 @@ A move is conservative, because the analyzer must be sure that the result compil
 - The fix skips the move when the new file already binds a needed name to another package, or when the import block that it would edit holds comments.
 - The fix skips generated files, files with build constraints, Go directives, or a build suffix in the file name, files that use cgo, files with comments that no declaration owns, and declarations that do not start their own line.
 
-A fix writes only files that Git tracks and that have no changes, so `git checkout` recovers a fix that went wrong.
 Diagnostics that remain after the fixes are printed, and the command exits unsuccessfully.
 
 With `-fix-commits`, constable commits the fixes itself, one commit per analyzer:

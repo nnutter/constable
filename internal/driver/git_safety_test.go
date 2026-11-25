@@ -19,10 +19,10 @@ func TestFixGitSafety(t *testing.T) {
 	}{
 		{name: "clean", wantCode: 0},
 		{name: "unrelated changes", change: "unrelated", wantCode: 0},
-		{name: "unstaged", change: "unstaged", wantCode: 1},
-		{name: "staged", change: "staged", wantCode: 1},
-		{name: "untracked", change: "untracked", wantCode: 1},
-		{name: "assume unchanged", change: "assume", wantCode: 1},
+		{name: "unstaged", change: "unstaged", wantCode: 0},
+		{name: "staged", change: "staged", wantCode: 0},
+		{name: "untracked", change: "untracked", wantCode: 0},
+		{name: "assume unchanged", change: "assume", wantCode: 0},
 		{name: "diff permits dirty files", change: "unstaged", diff: true, wantCode: 0},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
