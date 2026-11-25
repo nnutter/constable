@@ -126,7 +126,6 @@ It adds the imports that a moved method needs and removes the imports that the o
 
 Move a method by hand when the fix skips it.
 The fix skips a generated file, a file with build constraints or Go directives, a file that uses cgo, a file whose import block holds comments, a file with comments that no declaration owns, and a declaration that does not start its own line.
-The fix writes only a file that Git tracks and that has no changes, so `git checkout` recovers the file.
 
 ### unmodified
 

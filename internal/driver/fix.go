@@ -61,11 +61,6 @@ func validateFixFile(name string, file *fixFile, printDiff bool) error {
 	if err := checkFixFile(name, file, "since analysis"); err != nil {
 		return err
 	}
-	if !printDiff {
-		if !bytes.Equal(file.original, file.result) {
-			return checkGitClean(name)
-		}
-	}
 	return nil
 }
 
@@ -182,52 +177,6 @@ func checkFixFile(name string, f *fixFile, when string) error {
 	}
 	if !bytes.Equal(current, f.original) {
 		return fmt.Errorf("file %s changed %s", name, when)
-	}
-	return nil
-}
-
-// check rejects files that Git cannot confirm are tracked and safe to change.
-func checkGitClean(name string) error {
-	abs, err := filepath.Abs(name)
-	if err != nil {
-		return fmt.Errorf("resolve %s: %w", name, err)
-	}
-	info, err := os.Lstat(abs)
-	if err != nil {
-		return fmt.Errorf("inspect %s: %w", name, err)
-	}
-	if !info.Mode().IsRegular() {
-		return fmt.Errorf("file %s is not a regular file", name)
-	}
-	dir, base := filepath.Dir(abs), filepath.Base(abs)
-	pathspec := ":(literal)" + base
-	git := func(args ...string) ([]byte, error) {
-		cmd := exec.Command("git", append([]string{"--no-optional-locks", "-C", dir}, args...)...) // #nosec G204 -- The path is passed as a literal Git pathspec.
-		// -C selects the file's repository. GIT_DIR from git rebase --exec would override it.
-		cmd.Env = gitEnvWithoutRepository(os.Environ())
-		return cmd.Output()
-	}
-	tracked, err := git("ls-files", "-v", "-z", "--", pathspec)
-	if err != nil {
-		return fmt.Errorf("check Git tracking for %s: %w", name, err)
-	}
-	// H denotes an ordinary tracked file. Lowercase and S denote index flags
-	// that can hide worktree changes; other entries include unmerged files.
-	if len(tracked) < 3 {
-		return fmt.Errorf("file %s is not safely tracked by Git", name)
-	}
-	if tracked[0] != 'H' {
-		return fmt.Errorf("file %s is not safely tracked by Git", name)
-	}
-	if bytes.Count(tracked, []byte{0}) != 1 {
-		return fmt.Errorf("file %s is not safely tracked by Git", name)
-	}
-	status, err := git("status", "--porcelain=v1", "-z", "--untracked-files=all", "--", pathspec)
-	if err != nil {
-		return fmt.Errorf("check Git status for %s: %w", name, err)
-	}
-	if len(status) != 0 {
-		return fmt.Errorf("file %s has Git changes", name)
 	}
 	return nil
 }
