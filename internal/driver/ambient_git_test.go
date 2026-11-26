@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nnutter/gittest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/go/analysis"
 
@@ -15,6 +16,7 @@ import (
 // git rebase --exec exports GIT_DIR for the repository being rebased. Git
 // treats that variable as stronger than -C, so fixture setup must not follow it.
 func TestFixLeavesAmbientRepositoryUntouched(t *testing.T) {
+	gittest.WithSetenvEnviron(t)
 	outer := t.TempDir()
 	runGit(t, outer, "init", "-q")
 	runGit(t, outer, "config", "user.email", "keep@example.com")

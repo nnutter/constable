@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nnutter/gittest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -305,6 +306,41 @@ func TestCLIUnmodifiedFail(t *testing.T) {
 	assert.NotContains(t, output, moduleDir)
 }
 
+func TestCLIUnmodifiedAssignedInTest(t *testing.T) {
+	binary := buildBinary(t)
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/unmodifiedtest",
+			"",
+			"go 1.26",
+		},
+		Files: map[string][]string{
+			"a.go": {
+				"package unmodifiedtest",
+				"",
+				"var answer = 42",
+				"",
+				"func Use() int { return answer }",
+			},
+			"a_test.go": {
+				"package unmodifiedtest",
+				"",
+				"import \"testing\"",
+				"",
+				"func TestUse(t *testing.T) {",
+				"\tanswer = 7",
+				"\t_ = Use()",
+				"}",
+			},
+		},
+	})
+
+	output, err := runConstable(t, binary, moduleDir, "-unmodified")
+
+	require.NoError(t, err, output)
+	assert.Empty(t, output)
+}
+
 func TestCLIUnmodifiedFixCommits(t *testing.T) {
 	binary := buildBinary(t)
 	moduleDir := writeModule(t, module{
@@ -323,8 +359,7 @@ func TestCLIUnmodifiedFixCommits(t *testing.T) {
 	})
 	git := func(args ...string) string {
 		t.Helper()
-		command := exec.Command("git", args...)
-		command.Dir = moduleDir
+		command := gittest.Command(t, moduleDir, args...)
 		output, err := command.CombinedOutput()
 		require.NoError(t, err, string(output))
 		return string(output)
@@ -560,6 +595,7 @@ func buildBinaryWithLDFlags(t *testing.T, ldflags ...string) string {
 	args = append(args, "./cmd/constable")
 	command := exec.Command("go", args...)
 	command.Dir = repoRoot
+	command.Env = gittest.WithEnviron()
 	output, err := command.CombinedOutput()
 	require.NoError(t, err, string(output))
 
@@ -587,6 +623,7 @@ func runConstable(t *testing.T, binary string, moduleDir string, extraArgs ...st
 	args := append(extraArgs, "./...")
 	command := exec.Command(binary, args...)
 	command.Dir = moduleDir
+	command.Env = gittest.WithEnviron()
 	var output bytes.Buffer
 	command.Stdout = &output
 	command.Stderr = &output

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nnutter/gittest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/go/analysis"
 
@@ -24,6 +25,7 @@ func fixRepo(t *testing.T, source string) string {
 
 func fixRepoFiles(t *testing.T, files map[string]string) string {
 	t.Helper()
+	gittest.WithSetenvEnviron(t)
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/fix\n\ngo 1.25\n"), 0o644))
 	for name, source := range files {

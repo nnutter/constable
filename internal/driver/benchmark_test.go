@@ -3,6 +3,7 @@ package driver_test
 import (
 	"testing"
 
+	"github.com/nnutter/gittest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/go/analysis"
 
@@ -15,6 +16,7 @@ import (
 // invocations do. The directive package provides a small real workload with
 // standard-library and test dependencies. Go's build cache remains warm.
 func BenchmarkRun(b *testing.B) {
+	gittest.WithSetenvEnviron(b)
 	b.Chdir("../..")
 	cases := []struct {
 		name      string

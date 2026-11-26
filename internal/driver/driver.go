@@ -513,6 +513,7 @@ func Run(args []string, analyzers []*analysis.Analyzer, opts Options) (exitcode 
 		exitAtLeast(1)
 		return exitcode
 	}
+	dropSupersededDiagnostics(graph)
 
 	return outputResult(graph, cwd, opts, exitcode, false, nil)
 }
@@ -635,6 +636,9 @@ func analyzeFixPass(args []string, analyzers []*analysis.Analyzer, opts Options,
 	opts.afterLoad(initial)
 
 	graph, err := checker.Analyze(overlayAnalyzers(analyzers, overlay), initial, &checker.Options{})
+	if err == nil {
+		dropSupersededDiagnostics(graph)
+	}
 	return graph, sources, err
 }
 
