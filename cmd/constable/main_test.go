@@ -306,6 +306,41 @@ func TestCLIUnmodifiedFail(t *testing.T) {
 	assert.NotContains(t, output, moduleDir)
 }
 
+func TestCLIUnmodifiedAssignedInTest(t *testing.T) {
+	binary := buildBinary(t)
+	moduleDir := writeModule(t, module{
+		GoMod: []string{
+			"module example.com/unmodifiedtest",
+			"",
+			"go 1.26",
+		},
+		Files: map[string][]string{
+			"a.go": {
+				"package unmodifiedtest",
+				"",
+				"var answer = 42",
+				"",
+				"func Use() int { return answer }",
+			},
+			"a_test.go": {
+				"package unmodifiedtest",
+				"",
+				"import \"testing\"",
+				"",
+				"func TestUse(t *testing.T) {",
+				"\tanswer = 7",
+				"\t_ = Use()",
+				"}",
+			},
+		},
+	})
+
+	output, err := runConstable(t, binary, moduleDir, "-unmodified")
+
+	require.NoError(t, err, output)
+	assert.Empty(t, output)
+}
+
 func TestCLIUnmodifiedFixCommits(t *testing.T) {
 	binary := buildBinary(t)
 	moduleDir := writeModule(t, module{
