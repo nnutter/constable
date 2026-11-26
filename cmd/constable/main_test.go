@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nnutter/gittest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -323,8 +324,7 @@ func TestCLIUnmodifiedFixCommits(t *testing.T) {
 	})
 	git := func(args ...string) string {
 		t.Helper()
-		command := exec.Command("git", args...)
-		command.Dir = moduleDir
+		command := gittest.Command(t, moduleDir, args...)
 		output, err := command.CombinedOutput()
 		require.NoError(t, err, string(output))
 		return string(output)
@@ -560,6 +560,7 @@ func buildBinaryWithLDFlags(t *testing.T, ldflags ...string) string {
 	args = append(args, "./cmd/constable")
 	command := exec.Command("go", args...)
 	command.Dir = repoRoot
+	command.Env = gittest.WithEnviron()
 	output, err := command.CombinedOutput()
 	require.NoError(t, err, string(output))
 
@@ -587,6 +588,7 @@ func runConstable(t *testing.T, binary string, moduleDir string, extraArgs ...st
 	args := append(extraArgs, "./...")
 	command := exec.Command(binary, args...)
 	command.Dir = moduleDir
+	command.Env = gittest.WithEnviron()
 	var output bytes.Buffer
 	command.Stdout = &output
 	command.Stderr = &output

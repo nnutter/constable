@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/nnutter/gittest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/go/analysis"
 
@@ -71,6 +72,7 @@ func TestFixes(t *testing.T) {
 		{name: "diff output failure", diff: true, outputFailure: true, wantCode: 1, wantText: "var Broken = 1"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			gittest.WithSetenvEnviron(t)
 			dir := t.TempDir()
 			cwd, err := os.Getwd()
 			require.NoError(t, err)

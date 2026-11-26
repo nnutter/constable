@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/nnutter/gittest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/go/analysis"
 
@@ -26,6 +27,7 @@ func TestFixGitSafety(t *testing.T) {
 		{name: "diff permits dirty files", change: "unstaged", diff: true, wantCode: 0},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			gittest.WithSetenvEnviron(t)
 			dir := t.TempDir()
 			git := func(args ...string) {
 				t.Helper()

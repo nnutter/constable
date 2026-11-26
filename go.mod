@@ -1,10 +1,11 @@
 module github.com/nnutter/constable
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/alecthomas/go-check-sumtype v0.5.0
 	github.com/kisielk/errcheck v1.30.0
+	github.com/nnutter/gittest v0.0.3
 	github.com/nnutter/testifylint v0.0.1
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/nilaway v0.0.0-20260918162853-acb8859b9031
