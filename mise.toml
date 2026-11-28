@@ -21,8 +21,8 @@ uv = "latest"
 yamlfmt = "latest"
 
 [tasks.upgrade]
-description = "Upgrade the tools to their newest releases"
-run = ["mise upgrade", "mise lock"]
+description = "Upgrade and commit mise tools and shared hk config"
+run = "scripts/upgrade-tools"
 
 [tasks.all]
 description = "Run fix, test, and check"

@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly -a lock_paths=(mise.lock .mise.lock .mise/locks/)
+readonly package_url='github.com/nnutter/hk-config/releases/download'
+readonly hk_url='github.com/jdx/hk/releases/download'
+readonly version_pattern='[0-9]+\.[0-9]+\.[0-9]+'
+
+fail() {
+  printf 'upgrade: %s\n' "$1" >&2
+  exit 1
+}
+
+require_empty_index() {
+  git diff --cached --quiet || fail 'commit or unstage existing changes first'
+}
+
+commit_changes() {
+  local subject=$1 path status
+  local -a changed=()
+  shift
+  for path in "$@"; do
+    status=$(git status --porcelain --untracked-files=all -- "$path")
+    if [[ -n $status ]]; then
+      changed+=("$path")
+    fi
+  done
+  if [[ -z ${changed[*]-} ]]; then
+    return
+  fi
+  mise run validate
+  require_empty_index
+  git add -A -- "${changed[@]}"
+  git commit -m "$subject"
+}
+
+upgrade_hk() {
+  local release=$1 hk_version=$2 config updated
+  config=$(<hk.pkl)
+  updated=$(sed -E \
+    -e "s|($package_url)/v$version_pattern-[0-9]+/hk-config@$version_pattern-[0-9]+#|\1/v$release/hk-config@$release#|g" \
+    -e "s|($hk_url)/v$version_pattern/hk@$version_pattern#|\1/v$hk_version/hk@$hk_version#|g" hk.pkl)
+  [[ $updated == *"$package_url/v$release/hk-config@$release#/Config.pkl"* ]] ||
+    fail 'hk.pkl does not amend the shared hk-config package'
+
+  if ! grep -Eq "^hk[[:space:]]*=[[:space:]]*\"${hk_version//./\\.}\"([[:space:]]*(#.*)?)$" mise.toml; then
+    mise use --pin --path mise.toml "hk@$hk_version"
+  fi
+  if [[ $config != "$updated" ]]; then
+    printf '%s\n' "$updated" >hk.pkl
+  fi
+  if [[ -n $(git status --porcelain -- mise.toml hk.pkl) ]]; then
+    mise lock hk
+    mise exec -- hk validate
+    commit_changes "Upgrade hk-config to v$release and match hk" mise.toml hk.pkl "${lock_paths[@]}"
+  fi
+}
+
+main() {
+  local root tag hk_version status
+  root=$(git rev-parse --show-toplevel)
+  cd -- "$root"
+  git symbolic-ref -q HEAD >/dev/null || fail 'check out a branch before upgrading'
+  require_empty_index
+  status=$(git status --porcelain --untracked-files=all -- mise.toml hk.pkl "${lock_paths[@]}")
+  [[ -z $status ]] || fail 'commit or stash edits to mise or hk config and lockfiles first'
+
+  tag=$(gh api repos/nnutter/hk-config/releases/latest --jq .tag_name)
+  [[ $tag =~ ^v($version_pattern)-[0-9]+$ ]] || fail "unexpected hk-config release tag: $tag"
+  hk_version=${BASH_REMATCH[1]}
+
+  mise upgrade --no-global --exclude hk --no-prune
+  mise lock
+  commit_changes 'Upgrade mise tool lockfiles' "${lock_paths[@]}"
+  upgrade_hk "${tag#v}" "$hk_version"
+}
+
+main "$@"
