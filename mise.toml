@@ -9,7 +9,7 @@ go = "latest"
 "go:golang.org/x/tools/cmd/goimports" = "latest"
 "go:golang.org/x/vuln/cmd/govulncheck" = "latest"
 gofumpt = "latest"
-hk = "2.12.0"
+hk = "2.14.0"
 pkl = "latest"
 "pypi:agentskills-tools" = "latest"
 # agentskills-tools needs pyyaml, which has no CPython 3.15 wheel.
@@ -18,11 +18,13 @@ python = "3.14"
 staticcheck = "latest"
 tombi = "latest"
 uv = "latest"
+shellcheck = "latest"
+shfmt = "latest"
 yamlfmt = "latest"
 
 [tasks.upgrade]
-description = "Upgrade the tools to their newest releases"
-run = ["mise upgrade", "mise lock"]
+description = "Upgrade and commit mise tools and shared hk config"
+run = "scripts/upgrade-tools"
 
 [tasks.all]
 description = "Run fix, test, and check"
@@ -36,7 +38,8 @@ run = "go test -race -shuffle=on ./..."
 description = "Run tests and generate coverage report"
 run = "go test -coverprofile=coverage.out -covermode=atomic ./... && go tool cover -func=coverage.out"
 
-[tasks.setup]
+[tasks.install]
+alias = "setup"
 description = "Install hk git hooks"
 run = "hk install --mise"
 
@@ -58,6 +61,10 @@ fi
 [tasks.check]
 description = "Check all files without writing fixes"
 run = "hk check --all"
+
+[tasks.validate]
+description = "Run checks and tests without applying fixes"
+run = [{ task = "check" }, { task = "test" }]
 
 [tasks.on-start]
 description = "Run fix, test, and check before the agent starts"
