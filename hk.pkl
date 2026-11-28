@@ -30,7 +30,7 @@ local const constableDev = (Extra.constable) {
 // A replaced step is a new step, so the template's order does not reach it: the
 // go group runs constable after go_fix, and the replacement keeps that
 // place in the hooks that fix.
-hooks = (Hooks.all(List("go", "toml", "yaml", "agentskills"))) {
+hooks = (Hooks.all(List("go", "toml", "yaml", "agentskills", "shell"))) {
   ["check"] {
     steps {
       ["constable"] = constableDev

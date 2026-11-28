@@ -18,6 +18,8 @@ python = "3.14"
 staticcheck = "latest"
 tombi = "latest"
 uv = "latest"
+shellcheck = "latest"
+shfmt = "latest"
 yamlfmt = "latest"
 
 [tasks.upgrade]
